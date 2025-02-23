@@ -1,6 +1,5 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { registerAdminCommands } from "./commands/admin";
-import registerCharacterCommands from "./commands/character";
 import registerCurrencyCommands from "./commands/currency";
 
 export function setupBot(token: string) {
@@ -48,62 +47,12 @@ export function setupBot(token: string) {
         ]
       },
       {
-        name: "crear-personaje",
-        description: "Crea una nueva hoja de personaje",
-        options: [
-          {
-            name: "nombre",
-            description: "Nombre del personaje",
-            type: 3, // STRING
-            required: true
-          },
-          {
-            name: "nivel",
-            description: "Nivel del personaje",
-            type: 4, // INTEGER
-            required: true,
-            minValue: 1,
-            maxValue: 20
-          },
-          {
-            name: "clase",
-            description: "Clase del personaje",
-            type: 3, // STRING
-            required: true
-          },
-          {
-            name: "raza",
-            description: "Raza del personaje",
-            type: 3, // STRING
-            required: true
-          }
-        ]
-      },
-      {
         name: "monedas",
         description: "Lista todas las monedas disponibles"
       },
       {
         name: "balance",
         description: "Muestra tu balance actual de monedas"
-      },
-      {
-        name: "agregar-monedas",
-        description: "Agrega monedas a un personaje",
-        options: [
-          {
-            name: "moneda",
-            description: "Nombre de la moneda",
-            type: 3, // STRING
-            required: true
-          },
-          {
-            name: "cantidad",
-            description: "Cantidad a agregar",
-            type: 4, // INTEGER
-            required: true
-          }
-        ]
       },
       {
         name: "transferir",
@@ -141,6 +90,10 @@ export function setupBot(token: string) {
             required: true
           }
         ]
+      },
+      {
+        name: "trabajar",
+        description: "Trabaja para ganar monedas aleatorias"
       }
     ];
 
@@ -154,7 +107,6 @@ export function setupBot(token: string) {
 
   // Register all command handlers
   registerAdminCommands(client);
-  registerCharacterCommands(client);
   registerCurrencyCommands(client);
 
   client.login(token);

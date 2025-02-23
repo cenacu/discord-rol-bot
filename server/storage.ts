@@ -1,4 +1,4 @@
-import { characters, currencies, guildSettings, transactions, type Character, type Currency, type GuildSettings, type Transaction, type InsertCharacter, type InsertCurrency, type InsertGuildSettings, type InsertTransaction } from "@shared/schema";
+import { currencies, userWallets, guildSettings, transactions, type Currency, type UserWallet, type GuildSettings, type Transaction, type InsertCurrency, type InsertUserWallet, type InsertGuildSettings, type InsertTransaction } from "@shared/schema";
 
 export interface IStorage {
   // Currency operations
@@ -6,11 +6,10 @@ export interface IStorage {
   createCurrency(currency: InsertCurrency): Promise<Currency>;
   deleteCurrency(guildId: string, name: string): Promise<boolean>;
 
-  // Character operations
-  getCharacter(guildId: string, userId: string): Promise<Character | undefined>;
-  getCharacters(guildId: string): Promise<Character[]>;
-  createCharacter(character: InsertCharacter): Promise<Character>;
-  updateCharacterWallet(id: string, wallet: Record<string, number>): Promise<Character>;
+  // User wallet operations
+  getUserWallet(guildId: string, userId: string): Promise<UserWallet | undefined>;
+  createUserWallet(wallet: InsertUserWallet): Promise<UserWallet>;
+  updateUserWallet(id: number, wallet: Record<string, number>): Promise<UserWallet>;
 
   // Guild settings operations
   getGuildSettings(guildId: string): Promise<GuildSettings | undefined>;
@@ -21,30 +20,30 @@ export interface IStorage {
   getTransactions(guildId: string): Promise<Transaction[]>;
   transferCurrency(
     guildId: string,
-    fromCharacterId: string,
-    toCharacterId: string,
+    fromUserId: string,
+    toUserId: string,
     currencyName: string,
     amount: number
   ): Promise<Transaction>;
 }
 
 export class MemStorage implements IStorage {
-  private currencies: Map<string, Currency>;
-  private characters: Map<string, Character>;
+  private currencies: Map<number, Currency>;
+  private wallets: Map<number, UserWallet>;
   private settings: Map<number, GuildSettings>;
   private transactions: Map<number, Transaction>;
   private currencyId: number;
-  private characterId: number;
+  private walletId: number;
   private transactionId: number;
   private settingsId: number;
 
   constructor() {
     this.currencies = new Map();
-    this.characters = new Map();
+    this.wallets = new Map();
     this.settings = new Map();
     this.transactions = new Map();
     this.currencyId = 1;
-    this.characterId = 1;
+    this.walletId = 1;
     this.transactionId = 1;
     this.settingsId = 1;
   }
@@ -54,7 +53,7 @@ export class MemStorage implements IStorage {
   }
 
   async createCurrency(currency: InsertCurrency): Promise<Currency> {
-    const id = this.currencyId++.toString();
+    const id = this.currencyId++;
     const newCurrency = { ...currency, id };
     this.currencies.set(id, newCurrency);
     return newCurrency;
@@ -71,29 +70,25 @@ export class MemStorage implements IStorage {
     return false;
   }
 
-  async getCharacter(guildId: string, userId: string): Promise<Character | undefined> {
-    return Array.from(this.characters.values()).find(
-      c => c.guildId === guildId && c.userId === userId
+  async getUserWallet(guildId: string, userId: string): Promise<UserWallet | undefined> {
+    return Array.from(this.wallets.values()).find(
+      w => w.guildId === guildId && w.userId === userId
     );
   }
 
-  async getCharacters(guildId: string): Promise<Character[]> {
-    return Array.from(this.characters.values()).filter(c => c.guildId === guildId);
+  async createUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
+    const id = this.walletId++;
+    const newWallet = { ...wallet, id, wallet: {} };
+    this.wallets.set(id, newWallet);
+    return newWallet;
   }
 
-  async createCharacter(character: InsertCharacter): Promise<Character> {
-    const id = this.characterId++.toString();
-    const newCharacter = { ...character, id, wallet: {} };
-    this.characters.set(id, newCharacter);
-    return newCharacter;
-  }
+  async updateUserWallet(id: number, wallet: Record<string, number>): Promise<UserWallet> {
+    const userWallet = this.wallets.get(id);
+    if (!userWallet) throw new Error("Wallet not found");
 
-  async updateCharacterWallet(id: string, wallet: Record<string, number>): Promise<Character> {
-    const character = this.characters.get(id);
-    if (!character) throw new Error("Character not found");
-
-    const updated = { ...character, wallet };
-    this.characters.set(id, updated);
+    const updated = { ...userWallet, wallet };
+    this.wallets.set(id, updated);
     return updated;
   }
 
@@ -138,38 +133,42 @@ export class MemStorage implements IStorage {
 
   async transferCurrency(
     guildId: string,
-    fromCharacterId: string,
-    toCharacterId: string,
+    fromUserId: string,
+    toUserId: string,
     currencyName: string,
     amount: number
   ): Promise<Transaction> {
-    const fromCharacter = this.characters.get(fromCharacterId);
-    const toCharacter = this.characters.get(toCharacterId);
+    const fromWallet = await this.getUserWallet(guildId, fromUserId);
+    const toWallet = await this.getUserWallet(guildId, toUserId);
 
-    if (!fromCharacter || !toCharacter) {
-      throw new Error("Character not found");
+    if (!fromWallet) {
+      throw new Error("Source wallet not found");
     }
 
-    const currentBalance = fromCharacter.wallet[currencyName] || 0;
+    if (!toWallet) {
+      throw new Error("Destination wallet not found");
+    }
+
+    const currentBalance = fromWallet.wallet[currencyName] || 0;
     if (currentBalance < amount) {
       throw new Error("Insufficient funds");
     }
 
     // Update wallets
-    const fromWallet = { ...fromCharacter.wallet };
-    const toWallet = { ...toCharacter.wallet };
+    const fromUpdated = { ...fromWallet.wallet };
+    const toUpdated = { ...toWallet.wallet };
 
-    fromWallet[currencyName] = (fromWallet[currencyName] || 0) - amount;
-    toWallet[currencyName] = (toWallet[currencyName] || 0) + amount;
+    fromUpdated[currencyName] = (fromUpdated[currencyName] || 0) - amount;
+    toUpdated[currencyName] = (toUpdated[currencyName] || 0) + amount;
 
-    await this.updateCharacterWallet(fromCharacterId, fromWallet);
-    await this.updateCharacterWallet(toCharacterId, toWallet);
+    await this.updateUserWallet(fromWallet.id, fromUpdated);
+    await this.updateUserWallet(toWallet.id, toUpdated);
 
     // Create transaction record
     return this.createTransaction({
       guildId,
-      fromCharacterId,
-      toCharacterId,
+      fromUserId,
+      toUserId,
       currencyName,
       amount
     });

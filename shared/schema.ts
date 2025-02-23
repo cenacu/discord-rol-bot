@@ -9,14 +9,10 @@ export const currencies = pgTable("currencies", {
   symbol: text("symbol").notNull(),
 });
 
-export const characters = pgTable("characters", {
+export const userWallets = pgTable("user_wallets", {
   id: serial("id").primaryKey(),
   guildId: text("guild_id").notNull(),
   userId: text("user_id").notNull(),
-  name: text("name").notNull(),
-  level: integer("level").notNull(),
-  class: text("class").notNull(),
-  race: text("race").notNull(),
   wallet: json("wallet").$type<Record<string, number>>().notNull().default({}),
 });
 
@@ -29,8 +25,8 @@ export const guildSettings = pgTable("guild_settings", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   guildId: text("guild_id").notNull(),
-  fromCharacterId: integer("from_character_id").notNull(),
-  toCharacterId: integer("to_character_id").notNull(),
+  fromUserId: text("from_user_id").notNull(),
+  toUserId: text("to_user_id").notNull(),
   currencyName: text("currency_name").notNull(),
   amount: integer("amount").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
@@ -42,13 +38,9 @@ export const insertCurrencySchema = createInsertSchema(currencies).pick({
   symbol: true,
 });
 
-export const insertCharacterSchema = createInsertSchema(characters).pick({
+export const insertUserWalletSchema = createInsertSchema(userWallets).pick({
   guildId: true,
   userId: true,
-  name: true,
-  level: true,
-  class: true,
-  race: true,
 });
 
 export const insertGuildSettingsSchema = createInsertSchema(guildSettings).pick({
@@ -58,8 +50,8 @@ export const insertGuildSettingsSchema = createInsertSchema(guildSettings).pick(
 
 export const insertTransactionSchema = createInsertSchema(transactions).pick({
   guildId: true,
-  fromCharacterId: true,
-  toCharacterId: true,
+  fromUserId: true,
+  toUserId: true,
   currencyName: true,
   amount: true,
 });
@@ -67,8 +59,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
 export type Currency = typeof currencies.$inferSelect;
 export type InsertCurrency = z.infer<typeof insertCurrencySchema>;
 
-export type Character = typeof characters.$inferSelect;
-export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
+export type UserWallet = typeof userWallets.$inferSelect;
+export type InsertUserWallet = z.infer<typeof insertUserWalletSchema>;
 
 export type GuildSettings = typeof guildSettings.$inferSelect;
 export type InsertGuildSettings = z.infer<typeof insertGuildSettingsSchema>;
