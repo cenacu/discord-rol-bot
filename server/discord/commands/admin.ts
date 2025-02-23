@@ -1,4 +1,4 @@
-import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType } from "discord.js";
+import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel } from "discord.js";
 import { storage } from "../../storage";
 
 export function registerAdminCommands(client: Client) {
@@ -30,18 +30,49 @@ export function registerAdminCommands(client: Client) {
     .addChannelOption(option =>
       option.setName("canal")
         .setDescription("Canal donde se registrarán las transacciones")
-        .addChannelTypes(
-          ChannelType.GuildText,
-          ChannelType.GuildAnnouncement,
-          ChannelType.PublicThread,
-          ChannelType.PrivateThread,
-          ChannelType.AnnouncementThread
-        )
+        .addChannelTypes(ChannelType.GuildText)
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === "canal-registro") {
+      try {
+        const channel = interaction.options.getChannel("canal", true);
+
+        // Verificar que el canal sea un canal de texto
+        if (!(channel instanceof TextChannel)) {
+          await interaction.reply({
+            content: "El canal seleccionado debe ser un canal de texto",
+            ephemeral: true
+          });
+          return;
+        }
+
+        // Verificar permisos del bot en el canal
+        const permissions = channel.permissionsFor(interaction.client.user!);
+        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
+          await interaction.reply({
+            content: "No tengo permisos para enviar mensajes en ese canal",
+            ephemeral: true
+          });
+          return;
+        }
+
+        await storage.setTransactionLogChannel(interaction.guildId!, channel.id);
+        await interaction.reply(`Canal de registro establecido a #${channel.name}`);
+
+        // Enviar mensaje de prueba
+        await channel.send("✅ Canal configurado correctamente para registro de transacciones.");
+      } catch (error) {
+        console.error("Error al configurar canal de registro:", error);
+        await interaction.reply({
+          content: "Hubo un error al configurar el canal de registro",
+          ephemeral: true
+        });
+      }
+    }
 
     if (interaction.commandName === "crear-moneda") {
       try {
@@ -79,21 +110,6 @@ export function registerAdminCommands(client: Client) {
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al eliminar la moneda",
-          ephemeral: true
-        });
-      }
-    }
-
-    if (interaction.commandName === "canal-registro") {
-      try {
-        const channel = interaction.options.getChannel("canal", true);
-
-        await storage.setTransactionLogChannel(interaction.guildId!, channel.id);
-
-        await interaction.reply(`Canal de registro establecido a #${channel.name}`);
-      } catch (error) {
-        await interaction.reply({
-          content: "Hubo un error al configurar el canal de registro",
           ephemeral: true
         });
       }

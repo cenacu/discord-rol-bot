@@ -1,6 +1,7 @@
-import { Client, Events, GatewayIntentBits } from "discord.js";
+import { Client, Events, GatewayIntentBits, PermissionFlagsBits } from "discord.js";
 import { registerAdminCommands } from "./commands/admin";
 import registerCurrencyCommands from "./commands/currency";
+import registerCharacterCommands from "./commands/character";
 
 export function setupBot(token: string) {
   const client = new Client({
@@ -19,6 +20,7 @@ export function setupBot(token: string) {
       {
         name: "crear-moneda",
         description: "Crea una nueva moneda para el servidor",
+        defaultMemberPermissions: PermissionFlagsBits.Administrator,
         options: [
           {
             name: "nombre",
@@ -37,6 +39,7 @@ export function setupBot(token: string) {
       {
         name: "eliminar-moneda",
         description: "Elimina una moneda existente del servidor",
+        defaultMemberPermissions: PermissionFlagsBits.Administrator,
         options: [
           {
             name: "nombre",
@@ -82,6 +85,7 @@ export function setupBot(token: string) {
       {
         name: "canal-registro",
         description: "Establece el canal para registrar transacciones",
+        defaultMemberPermissions: PermissionFlagsBits.Administrator,
         options: [
           {
             name: "canal",
@@ -101,13 +105,26 @@ export function setupBot(token: string) {
     await Promise.all(
       client.guilds.cache.map(guild => 
         guild.commands.set(commands)
+          .then(() => console.log(`Comandos registrados en ${guild.name}`))
+          .catch(error => console.error(`Error al registrar comandos en ${guild.name}:`, error))
       )
     );
+  });
+
+  // Register commands when joining new guilds
+  client.on(Events.GuildCreate, async guild => {
+    try {
+      const commands = await guild.commands.fetch();
+      console.log(`Comandos registrados en nuevo servidor: ${guild.name}`);
+    } catch (error) {
+      console.error(`Error al registrar comandos en nuevo servidor ${guild.name}:`, error);
+    }
   });
 
   // Register all command handlers
   registerAdminCommands(client);
   registerCurrencyCommands(client);
+  registerCharacterCommands(client);
 
   client.login(token);
   return client;
