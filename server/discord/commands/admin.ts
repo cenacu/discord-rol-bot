@@ -15,6 +15,15 @@ export function registerAdminCommands(client: Client) {
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
+  const deleteCurrency = new SlashCommandBuilder()
+    .setName("eliminar-moneda")
+    .setDescription("Elimina una moneda existente del servidor")
+    .addStringOption(option =>
+      option.setName("nombre")
+        .setDescription("Nombre de la moneda a eliminar")
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -33,6 +42,27 @@ export function registerAdminCommands(client: Client) {
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al crear la moneda",
+          ephemeral: true
+        });
+      }
+    }
+
+    if (interaction.commandName === "eliminar-moneda") {
+      try {
+        const name = interaction.options.getString("nombre", true);
+        const deleted = await storage.deleteCurrency(interaction.guildId!, name);
+
+        if (deleted) {
+          await interaction.reply(`Moneda "${name}" eliminada con éxito.`);
+        } else {
+          await interaction.reply({
+            content: `No se encontró una moneda llamada "${name}"`,
+            ephemeral: true
+          });
+        }
+      } catch (error) {
+        await interaction.reply({
+          content: "Hubo un error al eliminar la moneda",
           ephemeral: true
         });
       }

@@ -35,6 +35,19 @@ export function setupBot(token: string) {
       ]
     };
 
+    const deleteCurrencyCmd = {
+      name: "eliminar-moneda",
+      description: "Elimina una moneda existente del servidor",
+      options: [
+        {
+          name: "nombre",
+          description: "Nombre de la moneda a eliminar",
+          type: 3, // STRING
+          required: true
+        }
+      ]
+    };
+
     const characterCmd = {
       name: "crear-personaje",
       description: "Crea una nueva hoja de personaje",
@@ -95,7 +108,7 @@ export function setupBot(token: string) {
     // Register slash commands for every guild the bot is in
     await Promise.all(
       client.guilds.cache.map(guild => 
-        guild.commands.set([adminCmd, characterCmd, currencyListCmd, addCurrencyCmd])
+        guild.commands.set([adminCmd, deleteCurrencyCmd, characterCmd, currencyListCmd, addCurrencyCmd])
       )
     );
   });
