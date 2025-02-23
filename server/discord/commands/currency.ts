@@ -1,9 +1,9 @@
-import { Client, SlashCommandBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONData } from "discord.js";
+import { Client, SlashCommandBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { storage } from "../../storage";
 
 export default function registerCurrencyCommands(
   client: Client,
-  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONData>
+  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONBody>
 ) {
   const listCurrencies = new SlashCommandBuilder()
     .setName("monedas")
@@ -295,6 +295,26 @@ export default function registerCurrencyCommands(
           });
         }
 
+        // Verificar cooldown de robo
+        const now = new Date();
+        if (toWallet.lastStolen) {
+          const timeSinceLastSteal = now.getTime() - toWallet.lastStolen.getTime();
+          const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+
+          if (timeSinceLastSteal < threeDaysInMs) {
+            const remainingTime = threeDaysInMs - timeSinceLastSteal;
+            const remainingHours = Math.ceil(remainingTime / (60 * 60 * 1000));
+            const remainingDays = Math.floor(remainingHours / 24);
+            const hours = remainingHours % 24;
+
+            await interaction.reply({
+              content: `Debes esperar ${remainingDays} días y ${hours} horas antes de poder robar nuevamente.`,
+              ephemeral: true
+            });
+            return;
+          }
+        }
+
         // Obtener monedas disponibles
         const currencies = await storage.getCurrencies(interaction.guildId!);
         if (currencies.length === 0) {
@@ -329,7 +349,8 @@ export default function registerCurrencyCommands(
         toUpdated[randomCurrency.name] = (toUpdated[randomCurrency.name] || 0) + amountStolen;
 
         await storage.updateUserWallet(fromWallet.id, fromUpdated);
-        await storage.updateUserWallet(toWallet.id, toUpdated);
+        // Actualizar billetera del ladrón con el nuevo tiempo de robo
+        await storage.updateUserWallet(toWallet.id, toUpdated, undefined, now);
 
         // Crear registro de transacción
         await storage.createTransaction({
@@ -343,7 +364,8 @@ export default function registerCurrencyCommands(
         // Enviar mensaje de éxito
         await interaction.reply(
           `🦹 ¡Robo exitoso!\n` +
-          `Has robado ${amountStolen} ${randomCurrency.symbol} de ${targetUser.username}`
+          `Has robado ${amountStolen} ${randomCurrency.symbol} de ${targetUser.username}\n` +
+          `Podrás volver a robar en 3 días.`
         );
 
         // Registrar en canal de log si está configurado

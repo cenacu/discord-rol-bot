@@ -12,7 +12,12 @@ export interface IStorage {
   // User wallet operations
   getUserWallet(guildId: string, userId: string): Promise<UserWallet | undefined>;
   createUserWallet(wallet: InsertUserWallet): Promise<UserWallet>;
-  updateUserWallet(id: number, wallet: Record<string, number>, lastWorked?: Date): Promise<UserWallet>;
+  updateUserWallet(
+    id: number, 
+    wallet: Record<string, number>, 
+    lastWorked?: Date,
+    lastStolen?: Date // Nuevo parámetro opcional
+  ): Promise<UserWallet>;
 
   // Guild settings operations
   getGuildSettings(guildId: string): Promise<GuildSettings | undefined>;
@@ -92,19 +97,25 @@ export class MemStorage implements IStorage {
 
   async createUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
     const id = this.walletId++;
-    const newWallet = { ...wallet, id, wallet: {}, lastWorked: null };
+    const newWallet = { ...wallet, id, wallet: {}, lastWorked: null, lastStolen: null };
     this.wallets.set(id, newWallet);
     return newWallet;
   }
 
-  async updateUserWallet(id: number, wallet: Record<string, number>, lastWorked?: Date): Promise<UserWallet> {
+  async updateUserWallet(
+    id: number, 
+    wallet: Record<string, number>, 
+    lastWorked?: Date,
+    lastStolen?: Date
+  ): Promise<UserWallet> {
     const userWallet = this.wallets.get(id);
     if (!userWallet) throw new Error("Wallet not found");
 
     const updated = { 
       ...userWallet, 
       wallet,
-      lastWorked: lastWorked || userWallet.lastWorked 
+      lastWorked: lastWorked || userWallet.lastWorked,
+      lastStolen: lastStolen || userWallet.lastStolen 
     };
     this.wallets.set(id, updated);
     return updated;
@@ -199,6 +210,7 @@ export class MemStorage implements IStorage {
       id,
       createdAt: new Date(),
       imageUrl: character.imageUrl ?? null,
+      n20Url: character.n20Url ?? null,
       rank: character.rank || 'Rango E' 
     };
     this.characters.set(id, newCharacter);

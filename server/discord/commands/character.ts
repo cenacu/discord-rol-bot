@@ -52,21 +52,6 @@ export default function registerCharacterCommands(
           { name: 'Tiefling', value: 'tiefling' }
         ))
     .addStringOption(option =>
-      option.setName("alineamiento")
-        .setDescription("Alineamiento del personaje")
-        .setRequired(true)
-        .addChoices(
-          { name: 'Legal Bueno', value: 'legal_bueno' },
-          { name: 'Neutral Bueno', value: 'neutral_bueno' },
-          { name: 'Caótico Bueno', value: 'caotico_bueno' },
-          { name: 'Legal Neutral', value: 'legal_neutral' },
-          { name: 'Neutral', value: 'neutral' },
-          { name: 'Caótico Neutral', value: 'caotico_neutral' },
-          { name: 'Legal Malvado', value: 'legal_malvado' },
-          { name: 'Neutral Malvado', value: 'neutral_malvado' },
-          { name: 'Caótico Malvado', value: 'caotico_malvado' }
-        ))
-    .addStringOption(option =>
       option.setName("rango")
         .setDescription("Rango del personaje")
         .setRequired(true)
@@ -78,10 +63,6 @@ export default function registerCharacterCommands(
           { name: 'Rango A', value: 'Rango A' }
         ))
     .addStringOption(option =>
-      option.setName("idiomas")
-        .setDescription("Idiomas que conoce el personaje (separados por comas)")
-        .setRequired(true))
-    .addStringOption(option =>
       option.setName("imagen")
         .setDescription("URL de la imagen del personaje")
         .setRequired(false))
@@ -90,6 +71,7 @@ export default function registerCharacterCommands(
         .setDescription("URL adicional para N20")
         .setRequired(false));
 
+  // Resto de comandos permanece igual
   const viewCharactersCommand = new SlashCommandBuilder()
     .setName("ver-personajes")
     .setDescription("Muestra tus personajes creados");
@@ -143,12 +125,7 @@ export default function registerCharacterCommands(
         const level = interaction.options.getInteger("nivel", true);
         const characterClass = interaction.options.getString("clase", true);
         const race = interaction.options.getString("raza", true);
-        const alignment = interaction.options.getString("alineamiento", true);
         const rank = interaction.options.getString("rango", true);
-        const languages = interaction.options.getString("idiomas", true)
-          .split(",")
-          .map(lang => lang.trim())
-          .filter(lang => lang.length > 0);
         const imageUrl = interaction.options.getString("imagen");
         const n20Url = interaction.options.getString("n20");
 
@@ -159,9 +136,9 @@ export default function registerCharacterCommands(
           level,
           class: characterClass,
           race,
-          alignment,
           rank,
-          languages,
+          languages: [],
+          alignment: 'neutral',
           imageUrl,
           n20Url
         });
@@ -173,9 +150,7 @@ export default function registerCharacterCommands(
             { name: 'Nivel', value: level.toString(), inline: true },
             { name: 'Clase', value: characterClass, inline: true },
             { name: 'Raza', value: race, inline: true },
-            { name: 'Rango', value: rank, inline: true },
-            { name: 'Alineamiento', value: alignment.replace('_', ' '), inline: true },
-            { name: 'Idiomas', value: languages.join(", "), inline: false }
+            { name: 'Rango', value: rank, inline: true }
           )
           .setTimestamp()
           .setColor('#00ff00');
@@ -219,8 +194,6 @@ export default function registerCharacterCommands(
               { name: 'Raza', value: char.race, inline: true },
               { name: 'Nivel', value: char.level.toString(), inline: true },
               { name: 'Rango', value: char.rank, inline: true },
-              { name: 'Alineamiento', value: char.alignment.replace('_', ' '), inline: true },
-              { name: 'Idiomas', value: char.languages.join(", "), inline: false },
               { name: 'Creado', value: char.createdAt.toLocaleDateString(), inline: true }
             )
             .setTimestamp()
@@ -251,6 +224,7 @@ export default function registerCharacterCommands(
       }
     }
 
+    // Los otros comandos permanecen sin cambios
     if (interaction.commandName === "eliminar-personaje") {
       try {
         const name = interaction.options.getString("nombre", true);
@@ -291,7 +265,6 @@ export default function registerCharacterCommands(
         const newLevel = interaction.options.getInteger("nivel");
         const newRank = interaction.options.getString("rango");
 
-        // Verificar que al menos se proporcione un campo para editar
         if (!newLevel && !newRank) {
           await interaction.reply({
             content: "Debes proporcionar al menos un campo para editar (nivel o rango).",

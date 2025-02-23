@@ -11,10 +11,8 @@ export function setupBot(token: string) {
     ],
   });
 
-  // Colección para almacenar todos los comandos
   const commands = new Collection<string, RESTPostAPIChatInputApplicationCommandsJSONBody>();
 
-  // Registrar todos los comandos y sus handlers primero
   registerAdminCommands(client, commands);
   registerCurrencyCommands(client, commands);
   registerCharacterCommands(client, commands);
@@ -24,13 +22,12 @@ export function setupBot(token: string) {
     console.log(`Link de invitación: https://discord.com/api/oauth2/authorize?client_id=${c.user?.id}&permissions=2147485696&scope=bot%20applications.commands`);
 
     try {
-      // Registrar comandos en cada guild
-      for (const [id, guild] of client.guilds.cache) {
+      // Registrar comandos en cada guild usando Array.from() para evitar el error de iteración
+      for (const guild of Array.from(client.guilds.cache.values())) {
         try {
           const registeredCommands = await guild.commands.set(
             Array.from(commands.values())
           );
-
           console.log(`✅ Comandos registrados en ${guild.name} (${registeredCommands.size} comandos)`);
         } catch (error) {
           console.error(`❌ Error al registrar comandos en ${guild.name}:`, error);

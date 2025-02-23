@@ -15,6 +15,7 @@ export const userWallets = pgTable("user_wallets", {
   userId: text("user_id").notNull(),
   wallet: json("wallet").$type<Record<string, number>>().notNull().default({}),
   lastWorked: timestamp("last_worked"),
+  lastStolen: timestamp("last_stolen"), 
 });
 
 export const guildSettings = pgTable("guild_settings", {
@@ -41,8 +42,8 @@ export const characters = pgTable("characters", {
   level: integer("level").notNull(),
   class: text("class").notNull(),
   race: text("race").notNull(),
-  alignment: text("alignment").notNull(),
-  languages: text("languages").array().notNull(),
+  alignment: text("alignment"),
+  languages: text("languages").array(),
   imageUrl: text("image_url"),
   n20Url: text("n20_url"),
   rank: text("rank").notNull().default('Rango E'),
@@ -80,8 +81,6 @@ export const insertCharacterSchema = createInsertSchema(characters).pick({
   level: true,
   class: true,
   race: true,
-  alignment: true,
-  languages: true,
   imageUrl: true,
   n20Url: true,
   rank: true,
