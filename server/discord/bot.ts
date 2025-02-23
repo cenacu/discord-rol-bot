@@ -105,12 +105,24 @@ export function setupBot(token: string) {
       {
         name: "trabajar",
         description: "Trabaja para ganar monedas aleatorias"
+      },
+      {
+        name: "robar",
+        description: "Intenta robar monedas de otro usuario",
+        options: [
+          {
+            name: "usuario",
+            description: "Usuario al que intentarás robar",
+            type: 6, // USER
+            required: true
+          }
+        ]
       }
     ];
 
     // Register slash commands for every guild the bot is in
     await Promise.all(
-      client.guilds.cache.map(guild => 
+      client.guilds.cache.map(guild =>
         guild.commands.set(commands)
           .then(() => {
             console.log(`Comandos registrados en ${guild.name}`);
@@ -123,7 +135,7 @@ export function setupBot(token: string) {
               'ManageMessages'
             ];
 
-            const missingPermissions = requiredPermissions.filter(perm => 
+            const missingPermissions = requiredPermissions.filter(perm =>
               !botMember?.permissions.has(perm as PermissionFlagsBits)
             );
 

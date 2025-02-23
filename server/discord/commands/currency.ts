@@ -31,6 +31,14 @@ export default function registerCurrencyCommands(client: Client) {
     .setName("trabajar")
     .setDescription("Trabaja para ganar monedas aleatorias");
 
+  const steal = new SlashCommandBuilder()
+    .setName("robar")
+    .setDescription("Intenta robar monedas de otro usuario")
+    .addUserOption(option =>
+      option.setName("usuario")
+        .setDescription("Usuario al que intentarás robar")
+        .setRequired(true));
+
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -241,6 +249,111 @@ export default function registerCurrencyCommands(client: Client) {
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al procesar tu trabajo",
+          ephemeral: true
+        });
+      }
+    }
+
+    if (interaction.commandName === "robar") {
+      try {
+        const targetUser = interaction.options.getUser("usuario", true);
+
+        // No puedes robarte a ti mismo
+        if (targetUser.id === interaction.user.id) {
+          await interaction.reply({
+            content: "No puedes robarte a ti mismo 🤦‍♂️",
+            ephemeral: true
+          });
+          return;
+        }
+
+        // Obtener o crear billeteras
+        let fromWallet = await storage.getUserWallet(interaction.guildId!, targetUser.id);
+        let toWallet = await storage.getUserWallet(interaction.guildId!, interaction.user.id);
+
+        if (!fromWallet) {
+          fromWallet = await storage.createUserWallet({
+            guildId: interaction.guildId!,
+            userId: targetUser.id
+          });
+        }
+
+        if (!toWallet) {
+          toWallet = await storage.createUserWallet({
+            guildId: interaction.guildId!,
+            userId: interaction.user.id
+          });
+        }
+
+        // Obtener monedas disponibles
+        const currencies = await storage.getCurrencies(interaction.guildId!);
+        if (currencies.length === 0) {
+          await interaction.reply("No hay monedas configuradas en este servidor.");
+          return;
+        }
+
+        // Verificar si la víctima tiene monedas
+        const victimHasCoins = Object.values(fromWallet.wallet).some(amount => amount > 0);
+        if (!victimHasCoins) {
+          await interaction.reply({
+            content: `${targetUser.username} no tiene monedas para robar 😢`,
+            ephemeral: true
+          });
+          return;
+        }
+
+        // Seleccionar una moneda aleatoria que la víctima tenga
+        const availableCurrencies = currencies.filter(c => (fromWallet!.wallet[c.name] || 0) > 0);
+        const randomCurrency = availableCurrencies[Math.floor(Math.random() * availableCurrencies.length)];
+
+        // Determinar cantidad a robar (entre 1 y 50% del balance de la víctima)
+        const victimBalance = fromWallet.wallet[randomCurrency.name] || 0;
+        const maxSteal = Math.floor(victimBalance * 0.5);
+        const amountStolen = Math.floor(Math.random() * maxSteal) + 1;
+
+        // Actualizar billeteras
+        const fromUpdated = { ...fromWallet.wallet };
+        const toUpdated = { ...toWallet.wallet };
+
+        fromUpdated[randomCurrency.name] = (fromUpdated[randomCurrency.name] || 0) - amountStolen;
+        toUpdated[randomCurrency.name] = (toUpdated[randomCurrency.name] || 0) + amountStolen;
+
+        await storage.updateUserWallet(fromWallet.id, fromUpdated);
+        await storage.updateUserWallet(toWallet.id, toUpdated);
+
+        // Crear registro de transacción
+        await storage.createTransaction({
+          guildId: interaction.guildId!,
+          fromUserId: targetUser.id,
+          toUserId: interaction.user.id,
+          currencyName: randomCurrency.name,
+          amount: amountStolen
+        });
+
+        // Enviar mensaje de éxito
+        await interaction.reply(
+          `🦹 ¡Robo exitoso!\n` +
+          `Has robado ${amountStolen} ${randomCurrency.symbol} de ${targetUser.username}`
+        );
+
+        // Registrar en canal de log si está configurado
+        const settings = await storage.getGuildSettings(interaction.guildId!);
+        if (settings?.transactionLogChannel) {
+          const channel = await interaction.guild?.channels.fetch(settings.transactionLogChannel);
+          if (channel?.isTextBased()) {
+            await channel.send(
+              `🦹 Robo detectado:\n` +
+              `Ladrón: <@${interaction.user.id}>\n` +
+              `Víctima: <@${targetUser.id}>\n` +
+              `Cantidad: ${amountStolen} ${randomCurrency.symbol}\n` +
+              `Fecha: ${new Date().toLocaleString()}`
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error en comando robar:", error);
+        await interaction.reply({
+          content: "Hubo un error al intentar robar",
           ephemeral: true
         });
       }
