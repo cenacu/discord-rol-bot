@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits, PermissionFlagsBits } from "discord.js";
+import { Client, Events, GatewayIntentBits, PermissionFlagsBits, ChannelType } from "discord.js";
 import { registerAdminCommands } from "./commands/admin";
 import registerCurrencyCommands from "./commands/currency";
 import registerCharacterCommands from "./commands/character";
@@ -8,10 +8,6 @@ export function setupBot(token: string) {
     intents: [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.MessageContent,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.GuildMessageReactions,
-      GatewayIntentBits.GuildVoiceStates,
     ],
   });
 
@@ -94,7 +90,8 @@ export function setupBot(token: string) {
             name: "canal",
             description: "Canal donde se registrarán las transacciones",
             type: 7, // CHANNEL
-            required: true
+            required: true,
+            channel_types: [0, 5] // 0 = GUILD_TEXT, 5 = GUILD_ANNOUNCEMENT
           }
         ]
       },

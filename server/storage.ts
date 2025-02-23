@@ -1,4 +1,7 @@
-import { currencies, userWallets, guildSettings, transactions, type Currency, type UserWallet, type GuildSettings, type Transaction, type InsertCurrency, type InsertUserWallet, type InsertGuildSettings, type InsertTransaction } from "@shared/schema";
+import { currencies, userWallets, guildSettings, transactions, characters, 
+  type Currency, type UserWallet, type GuildSettings, type Transaction, type Character,
+  type InsertCurrency, type InsertUserWallet, type InsertGuildSettings, type InsertTransaction, type InsertCharacter 
+} from "@shared/schema";
 
 export interface IStorage {
   // Currency operations
@@ -25,6 +28,13 @@ export interface IStorage {
     currencyName: string,
     amount: number
   ): Promise<Transaction>;
+
+  // Character operations
+  createCharacter(character: InsertCharacter): Promise<Character>;
+  getCharacter(guildId: string, userId: string): Promise<Character | undefined>;
+  getCharacters(guildId: string): Promise<Character[]>;
+  updateCharacter(id: number, character: Partial<InsertCharacter>): Promise<Character>;
+  deleteCharacter(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -32,20 +42,24 @@ export class MemStorage implements IStorage {
   private wallets: Map<number, UserWallet>;
   private settings: Map<number, GuildSettings>;
   private transactions: Map<number, Transaction>;
+  private characters: Map<number, Character>;
   private currencyId: number;
   private walletId: number;
   private transactionId: number;
   private settingsId: number;
+  private characterId: number;
 
   constructor() {
     this.currencies = new Map();
     this.wallets = new Map();
     this.settings = new Map();
     this.transactions = new Map();
+    this.characters = new Map();
     this.currencyId = 1;
     this.walletId = 1;
     this.transactionId = 1;
     this.settingsId = 1;
+    this.characterId = 1;
   }
 
   async getCurrencies(guildId: string): Promise<Currency[]> {
@@ -178,16 +192,53 @@ export class MemStorage implements IStorage {
     });
   }
 
-  // Reset method to clear all data
+  async createCharacter(character: InsertCharacter): Promise<Character> {
+    const id = this.characterId++;
+    const newCharacter = { 
+      ...character, 
+      id,
+      createdAt: new Date()
+    };
+    this.characters.set(id, newCharacter);
+    return newCharacter;
+  }
+
+  async getCharacter(guildId: string, userId: string): Promise<Character | undefined> {
+    return Array.from(this.characters.values()).find(
+      c => c.guildId === guildId && c.userId === userId
+    );
+  }
+
+  async getCharacters(guildId: string): Promise<Character[]> {
+    return Array.from(this.characters.values())
+      .filter(c => c.guildId === guildId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateCharacter(id: number, character: Partial<InsertCharacter>): Promise<Character> {
+    const existing = this.characters.get(id);
+    if (!existing) throw new Error("Character not found");
+
+    const updated = { ...existing, ...character };
+    this.characters.set(id, updated);
+    return updated;
+  }
+
+  async deleteCharacter(id: number): Promise<boolean> {
+    return this.characters.delete(id);
+  }
+
   reset() {
     this.currencies.clear();
     this.wallets.clear();
     this.settings.clear();
     this.transactions.clear();
+    this.characters.clear();
     this.currencyId = 1;
     this.walletId = 1;
     this.transactionId = 1;
     this.settingsId = 1;
+    this.characterId = 1;
   }
 }
 

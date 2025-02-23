@@ -30,6 +30,7 @@ export function registerAdminCommands(client: Client) {
     .addChannelOption(option =>
       option.setName("canal")
         .setDescription("Canal donde se registrarán las transacciones")
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
@@ -40,34 +41,18 @@ export function registerAdminCommands(client: Client) {
       try {
         const channel = interaction.options.getChannel("canal", true);
 
-        // Log información detallada del canal y guild
-        console.log("Información del guild:", {
-          guildId: interaction.guildId,
-          guildName: interaction.guild?.name,
-          botPermissions: interaction.guild?.members.me?.permissions.toArray()
-        });
-
+        // Log información detallada del canal
         console.log("Canal seleccionado:", {
           id: channel.id,
           name: channel.name,
           type: channel.type,
-          isText: channel.isTextBased(),
-          permissionFlags: channel.permissionsFor(interaction.client.user!)?.toArray()
+          isTextChannel: channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildAnnouncement
         });
 
-        // Verificar que el canal pueda recibir mensajes
-        const permissions = channel.permissionsFor(interaction.client.user!);
-        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
+        // Verificar que sea un canal de texto o anuncios
+        if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) {
           await interaction.reply({
-            content: "No tengo permisos para enviar mensajes en ese canal",
-            ephemeral: true
-          });
-          return;
-        }
-
-        if (!channel.isTextBased()) {
-          await interaction.reply({
-            content: "Por favor selecciona un canal de texto",
+            content: "Por favor selecciona un canal de texto o anuncios",
             ephemeral: true
           });
           return;
@@ -77,7 +62,16 @@ export function registerAdminCommands(client: Client) {
         await interaction.reply(`Canal de registro establecido a #${channel.name}`);
 
         // Enviar mensaje de prueba
-        await channel.send("✅ Canal configurado correctamente para registro de transacciones.");
+        try {
+          const textChannel = channel as TextChannel;
+          await textChannel.send("✅ Canal configurado correctamente para registro de transacciones.");
+        } catch (error) {
+          console.error("Error al enviar mensaje de prueba:", error);
+          await interaction.followUp({
+            content: "⚠️ El canal fue configurado pero no pude enviar un mensaje de prueba. Por favor verifica mis permisos.",
+            ephemeral: true
+          });
+        }
       } catch (error) {
         console.error("Error al configurar canal de registro:", error);
         await interaction.reply({

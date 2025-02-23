@@ -33,6 +33,17 @@ export const transactions = pgTable("transactions", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+export const characters = pgTable("characters", {
+  id: serial("id").primaryKey(),
+  guildId: text("guild_id").notNull(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  level: integer("level").notNull(),
+  class: text("class").notNull(),
+  race: text("race").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertCurrencySchema = createInsertSchema(currencies).pick({
   guildId: true,
   name: true,
@@ -57,6 +68,15 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   amount: true,
 });
 
+export const insertCharacterSchema = createInsertSchema(characters).pick({
+  guildId: true,
+  userId: true,
+  name: true,
+  level: true,
+  class: true,
+  race: true,
+});
+
 export type Currency = typeof currencies.$inferSelect;
 export type InsertCurrency = z.infer<typeof insertCurrencySchema>;
 
@@ -68,3 +88,6 @@ export type InsertGuildSettings = z.infer<typeof insertGuildSettingsSchema>;
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+export type Character = typeof characters.$inferSelect;
+export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
