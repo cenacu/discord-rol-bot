@@ -84,6 +84,10 @@ export default function registerCharacterCommands(
     .addStringOption(option =>
       option.setName("imagen")
         .setDescription("URL de la imagen del personaje")
+        .setRequired(false))
+    .addStringOption(option =>
+      option.setName("n20")
+        .setDescription("URL adicional para N20")
         .setRequired(false));
 
   const viewCharactersCommand = new SlashCommandBuilder()
@@ -146,6 +150,7 @@ export default function registerCharacterCommands(
           .map(lang => lang.trim())
           .filter(lang => lang.length > 0);
         const imageUrl = interaction.options.getString("imagen");
+        const n20Url = interaction.options.getString("n20");
 
         const character = await storage.createCharacter({
           guildId: interaction.guildId!,
@@ -157,7 +162,8 @@ export default function registerCharacterCommands(
           alignment,
           rank,
           languages,
-          imageUrl
+          imageUrl,
+          n20Url
         });
 
         const embed = new EmbedBuilder()
@@ -176,6 +182,10 @@ export default function registerCharacterCommands(
 
         if (imageUrl) {
           embed.setImage(imageUrl);
+        }
+
+        if (n20Url) {
+          embed.addFields({ name: 'N20', value: `[Ver en N20](${n20Url})`, inline: false });
         }
 
         await interaction.reply({ embeds: [embed], ephemeral: false });
