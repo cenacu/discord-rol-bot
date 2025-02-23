@@ -45,11 +45,33 @@ export default function registerBackupCommands(
         const transactions = await storage.getTransactions(interaction.guildId!);
         const settings = await storage.getGuildSettings(interaction.guildId!);
 
+        // Obtener todos los usuarios con billeteras
+        const guild = await interaction.guild?.members.fetch();
+        const balanceData = [];
+
+        if (guild) {
+          for (const [userId, member] of guild) {
+            const wallet = await storage.getUserWallet(interaction.guildId!, userId);
+            if (wallet) {
+              for (const currency of currencies) {
+                balanceData.push({
+                  userId,
+                  username: member.user.username,
+                  currencyName: currency.name,
+                  currencySymbol: currency.symbol,
+                  balance: wallet.wallet[currency.name] || 0
+                });
+              }
+            }
+          }
+        }
+
         // Convertir a CSV
         const currenciesCSV = stringify(currencies, { header: true });
         const charactersCSV = stringify(characters, { header: true });
         const transactionsCSV = stringify(transactions, { header: true });
         const settingsCSV = stringify([settings], { header: true });
+        const balancesCSV = stringify(balanceData, { header: true });
 
         // Guardar archivos
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -57,17 +79,20 @@ export default function registerBackupCommands(
         const charactersFile = path.join(backupDir, `characters_${timestamp}.csv`);
         const transactionsFile = path.join(backupDir, `transactions_${timestamp}.csv`);
         const settingsFile = path.join(backupDir, `settings_${timestamp}.csv`);
+        const balancesFile = path.join(backupDir, `balances_${timestamp}.csv`);
 
         fs.writeFileSync(currenciesFile, currenciesCSV);
         fs.writeFileSync(charactersFile, charactersCSV);
         fs.writeFileSync(transactionsFile, transactionsCSV);
         fs.writeFileSync(settingsFile, settingsCSV);
+        fs.writeFileSync(balancesFile, balancesCSV);
 
         // Crear archivos adjuntos para Discord
         const currenciesAttachment = new AttachmentBuilder(currenciesFile);
         const charactersAttachment = new AttachmentBuilder(charactersFile);
         const transactionsAttachment = new AttachmentBuilder(transactionsFile);
         const settingsAttachment = new AttachmentBuilder(settingsFile);
+        const balancesAttachment = new AttachmentBuilder(balancesFile);
 
         await interaction.editReply({
           content: `Backup completado. Fecha: ${timestamp}`,
@@ -75,7 +100,8 @@ export default function registerBackupCommands(
             currenciesAttachment,
             charactersAttachment,
             transactionsAttachment,
-            settingsAttachment
+            settingsAttachment,
+            balancesAttachment
           ]
         });
 
@@ -84,6 +110,7 @@ export default function registerBackupCommands(
         fs.unlinkSync(charactersFile);
         fs.unlinkSync(transactionsFile);
         fs.unlinkSync(settingsFile);
+        fs.unlinkSync(balancesFile);
 
       } catch (error) {
         console.error("Error al exportar datos:", error);
