@@ -1,7 +1,7 @@
 import { Client, SlashCommandBuilder } from "discord.js";
 import { storage } from "../../storage";
 
-export function registerCharacterCommands(client: Client) {
+export default function registerCharacterCommands(client: Client) {
   const createCharacter = new SlashCommandBuilder()
     .setName("crear-personaje")
     .setDescription("Crea una nueva hoja de personaje")

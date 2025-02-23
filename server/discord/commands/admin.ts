@@ -1,4 +1,4 @@
-import { Client, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType } from "discord.js";
 import { storage } from "../../storage";
 
 export function registerAdminCommands(client: Client) {
@@ -21,6 +21,16 @@ export function registerAdminCommands(client: Client) {
     .addStringOption(option =>
       option.setName("nombre")
         .setDescription("Nombre de la moneda a eliminar")
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
+  const setLogChannel = new SlashCommandBuilder()
+    .setName("canal-registro")
+    .setDescription("Establece el canal para registrar transacciones")
+    .addChannelOption(option =>
+      option.setName("canal")
+        .setDescription("Canal donde se registrarán las transacciones")
+        .addChannelTypes(ChannelType.GuildText)
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
@@ -63,6 +73,21 @@ export function registerAdminCommands(client: Client) {
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al eliminar la moneda",
+          ephemeral: true
+        });
+      }
+    }
+
+    if (interaction.commandName === "canal-registro") {
+      try {
+        const channel = interaction.options.getChannel("canal", true);
+
+        await storage.setTransactionLogChannel(interaction.guildId!, channel.id);
+
+        await interaction.reply(`Canal de registro establecido a #${channel.name}`);
+      } catch (error) {
+        await interaction.reply({
+          content: "Hubo un error al configurar el canal de registro",
           ephemeral: true
         });
       }
