@@ -3,6 +3,7 @@ import { registerAdminCommands } from "./commands/admin";
 import registerCurrencyCommands from "./commands/currency";
 import registerCharacterCommands from "./commands/character";
 import registerMoneyCommands from "./commands/money";
+import registerBackupCommands from "./commands/backup";
 
 export function setupBot(token: string) {
   const client = new Client({
@@ -18,6 +19,7 @@ export function setupBot(token: string) {
   registerCurrencyCommands(client, commands);
   registerCharacterCommands(client, commands);
   registerMoneyCommands(client, commands);
+  registerBackupCommands(client, commands);
 
   client.once(Events.ClientReady, async c => {
     console.log(`¡Bot listo! Conectado como ${c.user?.tag}`);
