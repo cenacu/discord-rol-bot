@@ -100,7 +100,7 @@ export default function registerCharacterCommands(
 
   const editCharacterCommand = new SlashCommandBuilder()
     .setName("editar-personaje")
-    .setDescription("Edita el nivel de uno de tus personajes")
+    .setDescription("Edita el nivel o rango de uno de tus personajes")
     .addStringOption(option =>
       option.setName("nombre")
         .setDescription("Nombre del personaje a editar")
@@ -108,9 +108,20 @@ export default function registerCharacterCommands(
     .addIntegerOption(option =>
       option.setName("nivel")
         .setDescription("Nuevo nivel del personaje")
-        .setRequired(true)
+        .setRequired(false)
         .setMinValue(1)
-        .setMaxValue(20));
+        .setMaxValue(20))
+    .addStringOption(option =>
+      option.setName("rango")
+        .setDescription("Nuevo rango del personaje")
+        .setRequired(false)
+        .addChoices(
+          { name: 'Rango E', value: 'Rango E' },
+          { name: 'Rango D', value: 'Rango D' },
+          { name: 'Rango C', value: 'Rango C' },
+          { name: 'Rango B', value: 'Rango B' },
+          { name: 'Rango A', value: 'Rango A' }
+        ));
 
   // Agregar comandos a la colección
   commands.set(createCharacterCommand.name, createCharacterCommand.toJSON());
@@ -263,7 +274,17 @@ export default function registerCharacterCommands(
     if (interaction.commandName === "editar-personaje") {
       try {
         const name = interaction.options.getString("nombre", true);
-        const newLevel = interaction.options.getInteger("nivel", true);
+        const newLevel = interaction.options.getInteger("nivel");
+        const newRank = interaction.options.getString("rango");
+
+        // Verificar que al menos se proporcione un campo para editar
+        if (!newLevel && !newRank) {
+          await interaction.reply({
+            content: "Debes proporcionar al menos un campo para editar (nivel o rango).",
+            ephemeral: true
+          });
+          return;
+        }
 
         const characters = await storage.getCharacters(interaction.guildId!);
         const character = characters.find(
@@ -279,15 +300,22 @@ export default function registerCharacterCommands(
         }
 
         const updatedCharacter = await storage.updateCharacter(character.id, {
-          level: newLevel
+          ...(newLevel && { level: newLevel }),
+          ...(newRank && { rank: newRank })
         });
 
         const embed = new EmbedBuilder()
           .setTitle(`Personaje actualizado`)
-          .setDescription(`El nivel de **${character.name}** ha sido actualizado.`)
+          .setDescription(`**${character.name}** ha sido actualizado.`)
           .addFields(
-            { name: 'Nivel anterior', value: character.level.toString(), inline: true },
-            { name: 'Nivel nuevo', value: newLevel.toString(), inline: true }
+            ...(newLevel ? [
+              { name: 'Nivel anterior', value: character.level.toString(), inline: true },
+              { name: 'Nivel nuevo', value: newLevel.toString(), inline: true }
+            ] : []),
+            ...(newRank ? [
+              { name: 'Rango anterior', value: character.rank, inline: true },
+              { name: 'Rango nuevo', value: newRank, inline: true }
+            ] : [])
           )
           .setColor('#00ff00')
           .setTimestamp();
