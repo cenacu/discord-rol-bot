@@ -79,9 +79,33 @@ export default function registerCharacterCommands(
     .setName("ver-personajes")
     .setDescription("Muestra tus personajes creados");
 
+  const deleteCharacterCommand = new SlashCommandBuilder()
+    .setName("eliminar-personaje")
+    .setDescription("Elimina uno de tus personajes")
+    .addStringOption(option =>
+      option.setName("nombre")
+        .setDescription("Nombre del personaje a eliminar")
+        .setRequired(true));
+
+  const editCharacterCommand = new SlashCommandBuilder()
+    .setName("editar-personaje")
+    .setDescription("Edita el nivel de uno de tus personajes")
+    .addStringOption(option =>
+      option.setName("nombre")
+        .setDescription("Nombre del personaje a editar")
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName("nivel")
+        .setDescription("Nuevo nivel del personaje")
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(20));
+
   // Agregar comandos a la colección
   commands.set(createCharacterCommand.name, createCharacterCommand.toJSON());
   commands.set(viewCharactersCommand.name, viewCharactersCommand.toJSON());
+  commands.set(deleteCharacterCommand.name, deleteCharacterCommand.toJSON());
+  commands.set(editCharacterCommand.name, editCharacterCommand.toJSON());
 
   // Manejar las interacciones de comandos
   client.on("interactionCreate", async interaction => {
@@ -132,12 +156,10 @@ export default function registerCharacterCommands(
         await interaction.reply({ embeds: [embed], ephemeral: false });
       } catch (error) {
         console.error("Error al crear personaje:", error);
-        if (!interaction.replied) {
-          await interaction.reply({
-            content: "Hubo un error al crear el personaje",
-            ephemeral: true
-          });
-        }
+        await interaction.reply({
+          content: "Hubo un error al crear el personaje",
+          ephemeral: true
+        });
       }
     }
 
@@ -183,12 +205,90 @@ export default function registerCharacterCommands(
         });
       } catch (error) {
         console.error("Error al obtener personajes:", error);
-        if (!interaction.replied) {
+        await interaction.reply({
+          content: "Hubo un error al obtener los personajes",
+          ephemeral: true
+        });
+      }
+    }
+
+    if (interaction.commandName === "eliminar-personaje") {
+      try {
+        const name = interaction.options.getString("nombre", true);
+        const characters = await storage.getCharacters(interaction.guildId!);
+        const character = characters.find(
+          c => c.userId === interaction.user.id && c.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (!character) {
           await interaction.reply({
-            content: "Hubo un error al obtener los personajes",
+            content: `No se encontró ningún personaje con el nombre "${name}" o no eres su propietario.`,
             ephemeral: true
           });
+          return;
         }
+
+        await storage.deleteCharacter(character.id);
+
+        const embed = new EmbedBuilder()
+          .setTitle(`Personaje eliminado`)
+          .setDescription(`**${character.name}** ha sido eliminado de tu colección.`)
+          .setColor('#ff0000')
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+      } catch (error) {
+        console.error("Error al eliminar personaje:", error);
+        await interaction.reply({
+          content: "Hubo un error al eliminar el personaje",
+          ephemeral: true
+        });
+      }
+    }
+
+    if (interaction.commandName === "editar-personaje") {
+      try {
+        const name = interaction.options.getString("nombre", true);
+        const newLevel = interaction.options.getInteger("nivel", true);
+
+        const characters = await storage.getCharacters(interaction.guildId!);
+        const character = characters.find(
+          c => c.userId === interaction.user.id && c.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (!character) {
+          await interaction.reply({
+            content: `No se encontró ningún personaje con el nombre "${name}" o no eres su propietario.`,
+            ephemeral: true
+          });
+          return;
+        }
+
+        const updatedCharacter = await storage.updateCharacter(character.id, {
+          level: newLevel
+        });
+
+        const embed = new EmbedBuilder()
+          .setTitle(`Personaje actualizado`)
+          .setDescription(`El nivel de **${character.name}** ha sido actualizado.`)
+          .addFields(
+            { name: 'Nivel anterior', value: character.level.toString(), inline: true },
+            { name: 'Nivel nuevo', value: newLevel.toString(), inline: true }
+          )
+          .setColor('#00ff00')
+          .setTimestamp();
+
+        if (character.imageUrl) {
+          embed.setImage(character.imageUrl);
+        }
+
+        await interaction.reply({ embeds: [embed], ephemeral: false });
+      } catch (error) {
+        console.error("Error al editar personaje:", error);
+        await interaction.reply({
+          content: "Hubo un error al editar el personaje",
+          ephemeral: true
+        });
       }
     }
   });
