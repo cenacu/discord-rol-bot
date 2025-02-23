@@ -91,7 +91,13 @@ export function setupBot(token: string) {
             description: "Canal donde se registrarán las transacciones",
             type: 7, // CHANNEL
             required: true,
-            channel_types: [0, 5] // 0 = GUILD_TEXT, 5 = GUILD_ANNOUNCEMENT
+            channel_types: [
+              ChannelType.GuildText,
+              ChannelType.GuildAnnouncement,
+              ChannelType.PublicThread,
+              ChannelType.PrivateThread,
+              ChannelType.AnnouncementThread
+            ]
           }
         ]
       },

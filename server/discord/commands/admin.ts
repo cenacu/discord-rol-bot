@@ -1,4 +1,4 @@
-import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel } from "discord.js";
+import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel } from "discord.js";
 import { storage } from "../../storage";
 
 export function registerAdminCommands(client: Client) {
@@ -30,7 +30,13 @@ export function registerAdminCommands(client: Client) {
     .addChannelOption(option =>
       option.setName("canal")
         .setDescription("Canal donde se registrarán las transacciones")
-        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+        .addChannelTypes(
+          ChannelType.GuildText,
+          ChannelType.GuildAnnouncement,
+          ChannelType.PublicThread,
+          ChannelType.PrivateThread,
+          ChannelType.AnnouncementThread
+        )
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
@@ -46,13 +52,25 @@ export function registerAdminCommands(client: Client) {
           id: channel.id,
           name: channel.name,
           type: channel.type,
-          isTextChannel: channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildAnnouncement
+          isValidChannel: [
+            ChannelType.GuildText,
+            ChannelType.GuildAnnouncement,
+            ChannelType.PublicThread,
+            ChannelType.PrivateThread,
+            ChannelType.AnnouncementThread
+          ].includes(channel.type)
         });
 
-        // Verificar que sea un canal de texto o anuncios
-        if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) {
+        // Verificar que sea un canal válido
+        if (![
+          ChannelType.GuildText,
+          ChannelType.GuildAnnouncement,
+          ChannelType.PublicThread,
+          ChannelType.PrivateThread,
+          ChannelType.AnnouncementThread
+        ].includes(channel.type)) {
           await interaction.reply({
-            content: "Por favor selecciona un canal de texto o anuncios",
+            content: "Por favor selecciona un canal de texto, anuncios o hilo",
             ephemeral: true
           });
           return;
@@ -63,8 +81,9 @@ export function registerAdminCommands(client: Client) {
 
         // Enviar mensaje de prueba
         try {
-          const textChannel = channel as TextChannel;
-          await textChannel.send("✅ Canal configurado correctamente para registro de transacciones.");
+          if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
+            await channel.send("✅ Canal configurado correctamente para registro de transacciones.");
+          }
         } catch (error) {
           console.error("Error al enviar mensaje de prueba:", error);
           await interaction.followUp({
