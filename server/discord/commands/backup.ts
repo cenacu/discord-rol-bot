@@ -45,23 +45,21 @@ export default function registerBackupCommands(
         const transactions = await storage.getTransactions(interaction.guildId!);
         const settings = await storage.getGuildSettings(interaction.guildId!);
 
-        // Obtener todos los usuarios con billeteras
-        const guild = await interaction.guild?.members.fetch();
+        // Preparar datos de balances
         const balanceData = [];
-
-        if (guild) {
-          for (const [userId, member] of guild) {
-            const wallet = await storage.getUserWallet(interaction.guildId!, userId);
-            if (wallet) {
-              for (const currency of currencies) {
-                balanceData.push({
-                  userId,
-                  username: member.user.username,
-                  currencyName: currency.name,
-                  currencySymbol: currency.symbol,
-                  balance: wallet.wallet[currency.name] || 0
-                });
-              }
+        for (const guildMember of interaction.guild!.members.cache.values()) {
+          const wallet = await storage.getUserWallet(interaction.guildId!, guildMember.id);
+          if (wallet) {
+            for (const currency of currencies) {
+              balanceData.push({
+                userId: guildMember.id,
+                username: guildMember.user.username,
+                currencyName: currency.name,
+                currencySymbol: currency.symbol,
+                balance: wallet.wallet[currency.name] || 0,
+                lastWorked: wallet.lastWorked ? wallet.lastWorked.toISOString() : null,
+                lastStolen: wallet.lastStolen ? wallet.lastStolen.toISOString() : null
+              });
             }
           }
         }
@@ -159,6 +157,41 @@ export default function registerBackupCommands(
               alignment: record.alignment || 'neutral',
               languages: record.languages ? JSON.parse(record.languages) : []
             });
+          }
+        } else if (attachment.name.includes('balances')) {
+          // Procesar usuarios únicos y sus balances
+          const userBalances = new Map();
+
+          for (const record of records) {
+            if (!userBalances.has(record.userId)) {
+              userBalances.set(record.userId, {
+                guildId: interaction.guildId!,
+                userId: record.userId,
+                wallet: {},
+                lastWorked: record.lastWorked ? new Date(record.lastWorked) : null,
+                lastStolen: record.lastStolen ? new Date(record.lastStolen) : null
+              });
+            }
+
+            const userWallet = userBalances.get(record.userId);
+            userWallet.wallet[record.currencyName] = parseInt(record.balance);
+          }
+
+          // Crear o actualizar billeteras
+          for (const [userId, walletData] of userBalances) {
+            let wallet = await storage.getUserWallet(interaction.guildId!, userId);
+            if (!wallet) {
+              wallet = await storage.createUserWallet({
+                guildId: interaction.guildId!,
+                userId: userId
+              });
+            }
+            await storage.updateUserWallet(
+              wallet.id,
+              walletData.wallet,
+              walletData.lastWorked,
+              walletData.lastStolen
+            );
           }
         }
 
