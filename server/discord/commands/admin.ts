@@ -30,7 +30,13 @@ export function registerAdminCommands(client: Client) {
     .addChannelOption(option =>
       option.setName("canal")
         .setDescription("Canal donde se registrarán las transacciones")
-        .addChannelTypes(ChannelType.GuildText)
+        .addChannelTypes(
+          ChannelType.GuildText,
+          ChannelType.GuildAnnouncement,
+          ChannelType.PublicThread,
+          ChannelType.PrivateThread,
+          ChannelType.AnnouncementThread
+        )
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
