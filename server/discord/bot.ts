@@ -13,6 +13,7 @@ export function setupBot(token: string) {
 
   client.once(Events.ClientReady, async c => {
     console.log(`¡Bot listo! Conectado como ${c.user.tag}`);
+    console.log(`Link de invitación: https://discord.com/api/oauth2/authorize?client_id=${c.user.id}&permissions=2147485696&scope=bot%20applications.commands`);
 
     // Get all slash commands
     const commands = [
@@ -111,7 +112,25 @@ export function setupBot(token: string) {
     await Promise.all(
       client.guilds.cache.map(guild => 
         guild.commands.set(commands)
-          .then(() => console.log(`Comandos registrados en ${guild.name}`))
+          .then(() => {
+            console.log(`Comandos registrados en ${guild.name}`);
+            // Verificar permisos del bot en el servidor
+            const botMember = guild.members.cache.get(client.user.id);
+            const requiredPermissions = [
+              'ViewChannel',
+              'SendMessages',
+              'ReadMessageHistory',
+              'ManageMessages'
+            ];
+
+            const missingPermissions = requiredPermissions.filter(perm => 
+              !botMember?.permissions.has(perm as PermissionFlagsBits)
+            );
+
+            if (missingPermissions.length > 0) {
+              console.warn(`⚠️ Faltan permisos en ${guild.name}:`, missingPermissions);
+            }
+          })
           .catch(error => console.error(`Error al registrar comandos en ${guild.name}:`, error))
       )
     );

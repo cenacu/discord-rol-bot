@@ -1,4 +1,4 @@
-import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel } from "discord.js";
+import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel, PermissionsString } from "discord.js";
 import { storage } from "../../storage";
 
 export function registerAdminCommands(client: Client) {
@@ -47,19 +47,38 @@ export function registerAdminCommands(client: Client) {
       try {
         const channel = interaction.options.getChannel("canal", true);
 
-        // Log información detallada del canal
-        console.log("Canal seleccionado:", {
-          id: channel.id,
-          name: channel.name,
-          type: channel.type,
-          isValidChannel: [
-            ChannelType.GuildText,
-            ChannelType.GuildAnnouncement,
-            ChannelType.PublicThread,
-            ChannelType.PrivateThread,
-            ChannelType.AnnouncementThread
-          ].includes(channel.type)
-        });
+        // Verificar permisos del bot en el canal
+        if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
+          const botMember = interaction.guild?.members.cache.get(client.user!.id);
+          const requiredPermissions: PermissionsString[] = [
+            'ViewChannel',
+            'SendMessages',
+            'ReadMessageHistory'
+          ];
+
+          const missingPermissions = requiredPermissions.filter(perm =>
+            !channel.permissionsFor(botMember!)?.has(perm)
+          );
+
+          if (missingPermissions.length > 0) {
+            const permissionsList = missingPermissions.map(perm =>
+              `- ${perm}`
+            ).join('\n');
+
+            await interaction.reply({
+              content: `No tengo los permisos necesarios en el canal ${channel.name}. 
+              Permisos faltantes:
+              ${permissionsList}
+
+              Por favor, asegúrate de que tengo los siguientes permisos en el canal:
+              - Ver Canal
+              - Enviar Mensajes
+              - Leer el Historial de Mensajes`,
+              ephemeral: true
+            });
+            return;
+          }
+        }
 
         // Verificar que sea un canal válido
         if (![
@@ -82,19 +101,34 @@ export function registerAdminCommands(client: Client) {
         // Enviar mensaje de prueba
         try {
           if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
-            await channel.send("✅ Canal configurado correctamente para registro de transacciones.");
+            await channel.send(`✅ Canal configurado correctamente para registro de transacciones.
+
+Importante: Para que el bot funcione correctamente, necesito los siguientes permisos en este canal:
+- Ver Canal
+- Enviar Mensajes
+- Leer el Historial de Mensajes
+
+Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
           }
         } catch (error) {
           console.error("Error al enviar mensaje de prueba:", error);
           await interaction.followUp({
-            content: "⚠️ El canal fue configurado pero no pude enviar un mensaje de prueba. Por favor verifica mis permisos.",
+            content: `⚠️ El canal fue configurado pero no pude enviar un mensaje de prueba. 
+            Por favor verifica que tengo los siguientes permisos:
+            - Ver Canal
+            - Enviar Mensajes
+            - Leer el Historial de Mensajes`,
             ephemeral: true
           });
         }
       } catch (error) {
         console.error("Error al configurar canal de registro:", error);
         await interaction.reply({
-          content: "Hubo un error al configurar el canal de registro",
+          content: `Hubo un error al configurar el canal de registro. 
+          Por favor verifica que:
+          1. El bot tiene los permisos necesarios en el servidor
+          2. El canal seleccionado es accesible por el bot
+          3. El bot tiene los permisos necesarios en el canal`,
           ephemeral: true
         });
       }
