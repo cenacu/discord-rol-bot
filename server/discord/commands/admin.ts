@@ -30,7 +30,6 @@ export function registerAdminCommands(client: Client) {
     .addChannelOption(option =>
       option.setName("canal")
         .setDescription("Canal donde se registrarán las transacciones")
-        .addChannelTypes(ChannelType.GuildText)
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
@@ -41,20 +40,34 @@ export function registerAdminCommands(client: Client) {
       try {
         const channel = interaction.options.getChannel("canal", true);
 
-        // Verificar que el canal sea un canal de texto
-        if (!(channel instanceof TextChannel)) {
+        // Log información detallada del canal y guild
+        console.log("Información del guild:", {
+          guildId: interaction.guildId,
+          guildName: interaction.guild?.name,
+          botPermissions: interaction.guild?.members.me?.permissions.toArray()
+        });
+
+        console.log("Canal seleccionado:", {
+          id: channel.id,
+          name: channel.name,
+          type: channel.type,
+          isText: channel.isTextBased(),
+          permissionFlags: channel.permissionsFor(interaction.client.user!)?.toArray()
+        });
+
+        // Verificar que el canal pueda recibir mensajes
+        const permissions = channel.permissionsFor(interaction.client.user!);
+        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
           await interaction.reply({
-            content: "El canal seleccionado debe ser un canal de texto",
+            content: "No tengo permisos para enviar mensajes en ese canal",
             ephemeral: true
           });
           return;
         }
 
-        // Verificar permisos del bot en el canal
-        const permissions = channel.permissionsFor(interaction.client.user!);
-        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
+        if (!channel.isTextBased()) {
           await interaction.reply({
-            content: "No tengo permisos para enviar mensajes en ese canal",
+            content: "Por favor selecciona un canal de texto",
             ephemeral: true
           });
           return;
