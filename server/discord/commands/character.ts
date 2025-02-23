@@ -5,7 +5,6 @@ export default function registerCharacterCommands(
   client: Client, 
   commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONBody>
 ) {
-  // Definir los comandos
   const createCharacterCommand = new SlashCommandBuilder()
     .setName("crear-personaje")
     .setDescription("Crea una nueva hoja de personaje")
@@ -65,11 +64,11 @@ export default function registerCharacterCommands(
     .addStringOption(option =>
       option.setName("imagen")
         .setDescription("URL de la imagen del personaje")
-        .setRequired(false))
+        .setRequired(true))
     .addStringOption(option =>
       option.setName("n20")
         .setDescription("URL adicional para N20")
-        .setRequired(false));
+        .setRequired(true));
 
   // Resto de comandos permanece igual
   const viewCharactersCommand = new SlashCommandBuilder()
@@ -126,8 +125,8 @@ export default function registerCharacterCommands(
         const characterClass = interaction.options.getString("clase", true);
         const race = interaction.options.getString("raza", true);
         const rank = interaction.options.getString("rango", true);
-        const imageUrl = interaction.options.getString("imagen");
-        const n20Url = interaction.options.getString("n20");
+        const imageUrl = interaction.options.getString("imagen", true); 
+        const n20Url = interaction.options.getString("n20", true); 
 
         const character = await storage.createCharacter({
           guildId: interaction.guildId!,
@@ -150,24 +149,18 @@ export default function registerCharacterCommands(
             { name: 'Nivel', value: level.toString(), inline: true },
             { name: 'Clase', value: characterClass, inline: true },
             { name: 'Raza', value: race, inline: true },
-            { name: 'Rango', value: rank, inline: true }
+            { name: 'Rango', value: rank, inline: true },
+            { name: 'N20', value: `[Ver en N20](${n20Url})`, inline: false }
           )
           .setTimestamp()
-          .setColor('#00ff00');
-
-        if (imageUrl) {
-          embed.setImage(imageUrl);
-        }
-
-        if (n20Url) {
-          embed.addFields({ name: 'N20', value: `[Ver en N20](${n20Url})`, inline: false });
-        }
+          .setColor('#00ff00')
+          .setImage(imageUrl);
 
         await interaction.reply({ embeds: [embed], ephemeral: false });
       } catch (error) {
         console.error("Error al crear personaje:", error);
         await interaction.reply({
-          content: "Hubo un error al crear el personaje",
+          content: "Hubo un error al crear el personaje. Asegúrate de proporcionar URLs válidas para la imagen y N20.",
           ephemeral: true
         });
       }
@@ -224,7 +217,7 @@ export default function registerCharacterCommands(
       }
     }
 
-    // Los otros comandos permanecen sin cambios
+
     if (interaction.commandName === "eliminar-personaje") {
       try {
         const name = interaction.options.getString("nombre", true);
