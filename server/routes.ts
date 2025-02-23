@@ -8,6 +8,9 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Reset storage
+  storage.reset();
+
   // Initialize Discord bot
   const bot = setupBot(process.env.DISCORD_TOKEN as string);
 

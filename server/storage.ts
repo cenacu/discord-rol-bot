@@ -177,6 +177,18 @@ export class MemStorage implements IStorage {
       amount
     });
   }
+
+  // Reset method to clear all data
+  reset() {
+    this.currencies.clear();
+    this.wallets.clear();
+    this.settings.clear();
+    this.transactions.clear();
+    this.currencyId = 1;
+    this.walletId = 1;
+    this.transactionId = 1;
+    this.settingsId = 1;
+  }
 }
 
 export const storage = new MemStorage();
