@@ -230,6 +230,10 @@ export default function registerCharacterCommands(
             embed.setImage(char.imageUrl);
           }
 
+          if (char.n20Url) {
+            embed.addFields({ name: 'N20', value: `[Ver en N20](${char.n20Url})`, inline: false });
+          }
+
           return embed;
         });
 

@@ -44,6 +44,7 @@ export const characters = pgTable("characters", {
   alignment: text("alignment").notNull(),
   languages: text("languages").array().notNull(),
   imageUrl: text("image_url"),
+  n20Url: text("n20_url"),
   rank: text("rank").notNull().default('Rango E'),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -82,6 +83,7 @@ export const insertCharacterSchema = createInsertSchema(characters).pick({
   alignment: true,
   languages: true,
   imageUrl: true,
+  n20Url: true,
   rank: true,
 });
 
