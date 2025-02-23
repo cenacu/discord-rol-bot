@@ -9,7 +9,7 @@ export interface IStorage {
   // User wallet operations
   getUserWallet(guildId: string, userId: string): Promise<UserWallet | undefined>;
   createUserWallet(wallet: InsertUserWallet): Promise<UserWallet>;
-  updateUserWallet(id: number, wallet: Record<string, number>): Promise<UserWallet>;
+  updateUserWallet(id: number, wallet: Record<string, number>, lastWorked?: Date): Promise<UserWallet>;
 
   // Guild settings operations
   getGuildSettings(guildId: string): Promise<GuildSettings | undefined>;
@@ -78,16 +78,20 @@ export class MemStorage implements IStorage {
 
   async createUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
     const id = this.walletId++;
-    const newWallet = { ...wallet, id, wallet: {} };
+    const newWallet = { ...wallet, id, wallet: {}, lastWorked: null };
     this.wallets.set(id, newWallet);
     return newWallet;
   }
 
-  async updateUserWallet(id: number, wallet: Record<string, number>): Promise<UserWallet> {
+  async updateUserWallet(id: number, wallet: Record<string, number>, lastWorked?: Date): Promise<UserWallet> {
     const userWallet = this.wallets.get(id);
     if (!userWallet) throw new Error("Wallet not found");
 
-    const updated = { ...userWallet, wallet };
+    const updated = { 
+      ...userWallet, 
+      wallet,
+      lastWorked: lastWorked || userWallet.lastWorked 
+    };
     this.wallets.set(id, updated);
     return updated;
   }

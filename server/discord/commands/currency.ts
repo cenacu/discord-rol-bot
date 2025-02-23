@@ -190,18 +190,39 @@ export default function registerCurrencyCommands(client: Client) {
           });
         }
 
+        // Check cooldown
+        const now = new Date();
+        if (wallet.lastWorked) {
+          const timeSinceLastWork = now.getTime() - wallet.lastWorked.getTime();
+          const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+
+          if (timeSinceLastWork < threeDaysInMs) {
+            const remainingTime = threeDaysInMs - timeSinceLastWork;
+            const remainingHours = Math.ceil(remainingTime / (60 * 60 * 1000));
+            const remainingDays = Math.floor(remainingHours / 24);
+            const hours = remainingHours % 24;
+
+            await interaction.reply({
+              content: `Debes esperar ${remainingDays} días y ${hours} horas antes de poder trabajar nuevamente.`,
+              ephemeral: true
+            });
+            return;
+          }
+        }
+
         // Select random currency and amount
         const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
         const earnedAmount = Math.floor(Math.random() * 41) + 10; // Random between 10 and 50
 
-        // Update wallet
+        // Update wallet with new amount and last worked time
         const updatedWallet = { ...wallet.wallet };
         updatedWallet[randomCurrency.name] = (updatedWallet[randomCurrency.name] || 0) + earnedAmount;
-        await storage.updateUserWallet(wallet.id, updatedWallet);
+        await storage.updateUserWallet(wallet.id, updatedWallet, now);
 
         await interaction.reply(
           `¡Has trabajado y ganado ${earnedAmount} ${randomCurrency.symbol}!\n` +
-          `Tu nuevo balance de ${randomCurrency.name} es: ${updatedWallet[randomCurrency.name]} ${randomCurrency.symbol}`
+          `Tu nuevo balance de ${randomCurrency.name} es: ${updatedWallet[randomCurrency.name]} ${randomCurrency.symbol}\n` +
+          `Podrás volver a trabajar en 3 días.`
         );
 
         // Log transaction if channel is configured
@@ -213,7 +234,7 @@ export default function registerCurrencyCommands(client: Client) {
               `💼 Recompensa por trabajo:\n` +
               `Usuario: <@${interaction.user.id}>\n` +
               `Ganancia: ${earnedAmount} ${randomCurrency.symbol}\n` +
-              `Fecha: ${new Date().toLocaleString()}`
+              `Fecha: ${now.toLocaleString()}`
             );
           }
         }

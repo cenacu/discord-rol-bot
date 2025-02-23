@@ -14,6 +14,7 @@ export const userWallets = pgTable("user_wallets", {
   guildId: text("guild_id").notNull(),
   userId: text("user_id").notNull(),
   wallet: json("wallet").$type<Record<string, number>>().notNull().default({}),
+  lastWorked: timestamp("last_worked"),
 });
 
 export const guildSettings = pgTable("guild_settings", {
