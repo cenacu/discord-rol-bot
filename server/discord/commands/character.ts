@@ -204,11 +204,11 @@ export default function registerCharacterCommands(
         const embeds = userCharacters.map(char => {
           const embed = new EmbedBuilder()
             .setTitle(char.name)
-            .setDescription(`Nivel ${char.level} ${char.race} ${char.class}`)
             .addFields(
               { name: 'Clase', value: char.class, inline: true },
               { name: 'Raza', value: char.race, inline: true },
               { name: 'Nivel', value: char.level.toString(), inline: true },
+              { name: 'Rango', value: char.rank, inline: true },
               { name: 'Alineamiento', value: char.alignment.replace('_', ' '), inline: true },
               { name: 'Idiomas', value: char.languages.join(", "), inline: false },
               { name: 'Creado', value: char.createdAt.toLocaleDateString(), inline: true }
