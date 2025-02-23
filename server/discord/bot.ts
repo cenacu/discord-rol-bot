@@ -15,7 +15,7 @@ export function setupBot(token: string) {
     console.log(`¡Bot listo! Conectado como ${c.user.tag}`);
     console.log(`Link de invitación: https://discord.com/api/oauth2/authorize?client_id=${c.user.id}&permissions=2147485696&scope=bot%20applications.commands`);
 
-    // Get all slash commands
+    // Update commands array in the ClientReady event handler
     const commands = [
       {
         name: "crear-moneda",
@@ -117,6 +117,95 @@ export function setupBot(token: string) {
             required: true
           }
         ]
+      },
+      {
+        name: "crear-personaje",
+        description: "Crea una nueva hoja de personaje",
+        options: [
+          {
+            name: "nombre",
+            description: "Nombre del personaje",
+            type: 3, // STRING
+            required: true
+          },
+          {
+            name: "nivel",
+            description: "Nivel del personaje",
+            type: 4, // INTEGER
+            required: true,
+            minValue: 1,
+            maxValue: 20
+          },
+          {
+            name: "clase",
+            description: "Clase del personaje",
+            type: 3, // STRING
+            required: true,
+            choices: [
+              { name: 'Bárbaro', value: 'barbaro' },
+              { name: 'Bardo', value: 'bardo' },
+              { name: 'Clérigo', value: 'clerigo' },
+              { name: 'Druida', value: 'druida' },
+              { name: 'Guerrero', value: 'guerrero' },
+              { name: 'Hechicero', value: 'hechicero' },
+              { name: 'Mago', value: 'mago' },
+              { name: 'Monje', value: 'monje' },
+              { name: 'Paladín', value: 'paladin' },
+              { name: 'Pícaro', value: 'picaro' },
+              { name: 'Explorador', value: 'explorador' }
+            ]
+          },
+          {
+            name: "raza",
+            description: "Raza del personaje",
+            type: 3, // STRING
+            required: true,
+            choices: [
+              { name: 'Humano', value: 'humano' },
+              { name: 'Elfo', value: 'elfo' },
+              { name: 'Enano', value: 'enano' },
+              { name: 'Mediano', value: 'mediano' },
+              { name: 'Gnomo', value: 'gnomo' },
+              { name: 'Semielfo', value: 'semielfo' },
+              { name: 'Semiorco', value: 'semiorco' },
+              { name: 'Dracónido', value: 'draconido' },
+              { name: 'Tiefling', value: 'tiefling' }
+            ]
+          },
+          {
+            name: "alineamiento",
+            description: "Alineamiento del personaje",
+            type: 3, // STRING
+            required: true,
+            choices: [
+              { name: 'Legal Bueno', value: 'legal_bueno' },
+              { name: 'Neutral Bueno', value: 'neutral_bueno' },
+              { name: 'Caótico Bueno', value: 'caotico_bueno' },
+              { name: 'Legal Neutral', value: 'legal_neutral' },
+              { name: 'Neutral', value: 'neutral' },
+              { name: 'Caótico Neutral', value: 'caotico_neutral' },
+              { name: 'Legal Malvado', value: 'legal_malvado' },
+              { name: 'Neutral Malvado', value: 'neutral_malvado' },
+              { name: 'Caótico Malvado', value: 'caotico_malvado' }
+            ]
+          },
+          {
+            name: "idiomas",
+            description: "Idiomas que conoce el personaje (separados por comas)",
+            type: 3, // STRING
+            required: true
+          },
+          {
+            name: "imagen",
+            description: "URL de la imagen del personaje",
+            type: 3, // STRING
+            required: false
+          }
+        ]
+      },
+      {
+        name: "ver-personajes",
+        description: "Muestra tus personajes creados"
       }
     ];
 

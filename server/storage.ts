@@ -197,7 +197,8 @@ export class MemStorage implements IStorage {
     const newCharacter = { 
       ...character, 
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      imageUrl: character.imageUrl ?? null 
     };
     this.characters.set(id, newCharacter);
     return newCharacter;

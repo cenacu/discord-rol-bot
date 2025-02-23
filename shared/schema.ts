@@ -41,6 +41,9 @@ export const characters = pgTable("characters", {
   level: integer("level").notNull(),
   class: text("class").notNull(),
   race: text("race").notNull(),
+  alignment: text("alignment").notNull(),
+  languages: text("languages").array().notNull(),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -75,6 +78,9 @@ export const insertCharacterSchema = createInsertSchema(characters).pick({
   level: true,
   class: true,
   race: true,
+  alignment: true,
+  languages: true,
+  imageUrl: true,
 });
 
 export type Currency = typeof currencies.$inferSelect;
