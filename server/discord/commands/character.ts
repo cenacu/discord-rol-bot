@@ -70,7 +70,6 @@ export default function registerCharacterCommands(
         .setDescription("URL adicional para N20")
         .setRequired(true));
 
-  // Resto de comandos permanece igual
   const viewCharactersCommand = new SlashCommandBuilder()
     .setName("ver-personajes")
     .setDescription("Muestra tus personajes creados");
@@ -108,13 +107,11 @@ export default function registerCharacterCommands(
           { name: 'Rango A', value: 'Rango A' }
         ));
 
-  // Agregar comandos a la colección
   commands.set(createCharacterCommand.name, createCharacterCommand.toJSON());
   commands.set(viewCharactersCommand.name, viewCharactersCommand.toJSON());
   commands.set(deleteCharacterCommand.name, deleteCharacterCommand.toJSON());
   commands.set(editCharacterCommand.name, editCharacterCommand.toJSON());
 
-  // Manejar las interacciones de comandos
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -173,8 +170,8 @@ export default function registerCharacterCommands(
 
         if (userCharacters.length === 0) {
           await interaction.reply({
-            content: "No tienes personajes creados aún.",
-            ephemeral: true
+            content: `${interaction.user.username} no tiene personajes creados aún.`,
+            ephemeral: false
           });
           return;
         }
@@ -204,9 +201,9 @@ export default function registerCharacterCommands(
         });
 
         await interaction.reply({
-          content: `**Tus personajes** (${userCharacters.length}):`,
+          content: `**Personajes de ${interaction.user.username}** (${userCharacters.length}):`,
           embeds: embeds,
-          ephemeral: true
+          ephemeral: false
         });
       } catch (error) {
         console.error("Error al obtener personajes:", error);
