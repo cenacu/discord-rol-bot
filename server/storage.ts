@@ -198,7 +198,8 @@ export class MemStorage implements IStorage {
       ...character, 
       id,
       createdAt: new Date(),
-      imageUrl: character.imageUrl ?? null 
+      imageUrl: character.imageUrl ?? null,
+      rank: character.rank || 'Rango E' 
     };
     this.characters.set(id, newCharacter);
     return newCharacter;

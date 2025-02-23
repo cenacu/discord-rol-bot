@@ -44,6 +44,7 @@ export const characters = pgTable("characters", {
   alignment: text("alignment").notNull(),
   languages: text("languages").array().notNull(),
   imageUrl: text("image_url"),
+  rank: text("rank").notNull().default('Rango E'),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -81,6 +82,7 @@ export const insertCharacterSchema = createInsertSchema(characters).pick({
   alignment: true,
   languages: true,
   imageUrl: true,
+  rank: true,
 });
 
 export type Currency = typeof currencies.$inferSelect;

@@ -67,6 +67,17 @@ export default function registerCharacterCommands(
           { name: 'Caótico Malvado', value: 'caotico_malvado' }
         ))
     .addStringOption(option =>
+      option.setName("rango")
+        .setDescription("Rango del personaje")
+        .setRequired(true)
+        .addChoices(
+          { name: 'Rango E', value: 'Rango E' },
+          { name: 'Rango D', value: 'Rango D' },
+          { name: 'Rango C', value: 'Rango C' },
+          { name: 'Rango B', value: 'Rango B' },
+          { name: 'Rango A', value: 'Rango A' }
+        ))
+    .addStringOption(option =>
       option.setName("idiomas")
         .setDescription("Idiomas que conoce el personaje (separados por comas)")
         .setRequired(true))
@@ -118,6 +129,7 @@ export default function registerCharacterCommands(
         const characterClass = interaction.options.getString("clase", true);
         const race = interaction.options.getString("raza", true);
         const alignment = interaction.options.getString("alineamiento", true);
+        const rank = interaction.options.getString("rango", true);
         const languages = interaction.options.getString("idiomas", true)
           .split(",")
           .map(lang => lang.trim())
@@ -132,6 +144,7 @@ export default function registerCharacterCommands(
           class: characterClass,
           race,
           alignment,
+          rank,
           languages,
           imageUrl
         });
@@ -143,6 +156,7 @@ export default function registerCharacterCommands(
             { name: 'Nivel', value: level.toString(), inline: true },
             { name: 'Clase', value: characterClass, inline: true },
             { name: 'Raza', value: race, inline: true },
+            { name: 'Rango', value: rank, inline: true },
             { name: 'Alineamiento', value: alignment.replace('_', ' '), inline: true },
             { name: 'Idiomas', value: languages.join(", "), inline: false }
           )
