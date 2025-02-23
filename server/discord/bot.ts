@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits, Collection, RESTPostAPIChatInputApplicationCommandsJSONData } from "discord.js";
+import { Client, Events, GatewayIntentBits, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { registerAdminCommands } from "./commands/admin";
 import registerCurrencyCommands from "./commands/currency";
 import registerCharacterCommands from "./commands/character";
@@ -12,7 +12,12 @@ export function setupBot(token: string) {
   });
 
   // Colección para almacenar todos los comandos
-  const commands = new Collection<string, RESTPostAPIChatInputApplicationCommandsJSONData>();
+  const commands = new Collection<string, RESTPostAPIChatInputApplicationCommandsJSONBody>();
+
+  // Registrar todos los comandos y sus handlers primero
+  registerAdminCommands(client, commands);
+  registerCurrencyCommands(client, commands);
+  registerCharacterCommands(client, commands);
 
   client.once(Events.ClientReady, async c => {
     console.log(`¡Bot listo! Conectado como ${c.user?.tag}`);
@@ -22,17 +27,11 @@ export function setupBot(token: string) {
       // Registrar comandos en cada guild
       for (const [id, guild] of client.guilds.cache) {
         try {
-          // Obtener los comandos actuales
-          const currentCommands = await guild.commands.fetch();
-
-          // Registrar los comandos
-          await guild.commands.set([]);
           const registeredCommands = await guild.commands.set(
             Array.from(commands.values())
           );
 
           console.log(`✅ Comandos registrados en ${guild.name} (${registeredCommands.size} comandos)`);
-
         } catch (error) {
           console.error(`❌ Error al registrar comandos en ${guild.name}:`, error);
         }
@@ -53,11 +52,6 @@ export function setupBot(token: string) {
       console.error(`❌ Error al registrar comandos en nuevo servidor ${guild.name}:`, error);
     }
   });
-
-  // Registrar todos los comandos y sus handlers
-  registerAdminCommands(client, commands);
-  registerCurrencyCommands(client, commands);
-  registerCharacterCommands(client, commands);
 
   client.login(token);
   return client;

@@ -1,9 +1,9 @@
-import { Client, SlashCommandBuilder, EmbedBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONData } from "discord.js";
+import { Client, SlashCommandBuilder, EmbedBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { storage } from "../../storage";
 
 export default function registerCharacterCommands(
   client: Client, 
-  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONData>
+  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONBody>
 ) {
   // Definir los comandos
   const createCharacterCommand = new SlashCommandBuilder()
@@ -176,13 +176,11 @@ export default function registerCharacterCommands(
           return embed;
         });
 
-        if (!interaction.replied) {
-          await interaction.reply({
-            content: `**Tus personajes** (${userCharacters.length}):`,
-            embeds: embeds,
-            ephemeral: true
-          });
-        }
+        await interaction.reply({
+          content: `**Tus personajes** (${userCharacters.length}):`,
+          embeds: embeds,
+          ephemeral: true
+        });
       } catch (error) {
         console.error("Error al obtener personajes:", error);
         if (!interaction.replied) {

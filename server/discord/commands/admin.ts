@@ -1,7 +1,10 @@
-import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel, PermissionsString } from "discord.js";
+import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel, PermissionsString, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { storage } from "../../storage";
 
-export function registerAdminCommands(client: Client) {
+export function registerAdminCommands(
+  client: Client,
+  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONBody>
+) {
   const createCurrency = new SlashCommandBuilder()
     .setName("crear-moneda")
     .setDescription("Crea una nueva moneda para el servidor")
@@ -40,6 +43,11 @@ export function registerAdminCommands(client: Client) {
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
+  // Agregar comandos a la colección
+  commands.set(createCurrency.name, createCurrency.toJSON());
+  commands.set(deleteCurrency.name, deleteCurrency.toJSON());
+  commands.set(setLogChannel.name, setLogChannel.toJSON());
+
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -47,7 +55,6 @@ export function registerAdminCommands(client: Client) {
       try {
         const channel = interaction.options.getChannel("canal", true);
 
-        // Verificar permisos del bot en el canal
         if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
           const botMember = interaction.guild?.members.cache.get(client.user!.id);
           const requiredPermissions: PermissionsString[] = [
@@ -80,7 +87,6 @@ export function registerAdminCommands(client: Client) {
           }
         }
 
-        // Verificar que sea un canal válido
         if (![
           ChannelType.GuildText,
           ChannelType.GuildAnnouncement,
@@ -98,10 +104,8 @@ export function registerAdminCommands(client: Client) {
         await storage.setTransactionLogChannel(interaction.guildId!, channel.id);
         await interaction.reply(`Canal de registro establecido a #${channel.name}`);
 
-        // Enviar mensaje de prueba
-        try {
-          if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
-            await channel.send(`✅ Canal configurado correctamente para registro de transacciones.
+        if (channel instanceof TextChannel || channel instanceof ThreadChannel) {
+          await channel.send(`✅ Canal configurado correctamente para registro de transacciones.
 
 Importante: Para que el bot funcione correctamente, necesito los siguientes permisos en este canal:
 - Ver Canal
@@ -109,17 +113,6 @@ Importante: Para que el bot funcione correctamente, necesito los siguientes perm
 - Leer el Historial de Mensajes
 
 Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
-          }
-        } catch (error) {
-          console.error("Error al enviar mensaje de prueba:", error);
-          await interaction.followUp({
-            content: `⚠️ El canal fue configurado pero no pude enviar un mensaje de prueba. 
-            Por favor verifica que tengo los siguientes permisos:
-            - Ver Canal
-            - Enviar Mensajes
-            - Leer el Historial de Mensajes`,
-            ephemeral: true
-          });
         }
       } catch (error) {
         console.error("Error al configurar canal de registro:", error);

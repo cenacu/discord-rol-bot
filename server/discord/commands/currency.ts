@@ -1,7 +1,10 @@
-import { Client, SlashCommandBuilder } from "discord.js";
+import { Client, SlashCommandBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONData } from "discord.js";
 import { storage } from "../../storage";
 
-export default function registerCurrencyCommands(client: Client) {
+export default function registerCurrencyCommands(
+  client: Client,
+  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONData>
+) {
   const listCurrencies = new SlashCommandBuilder()
     .setName("monedas")
     .setDescription("Lista todas las monedas disponibles");
@@ -38,6 +41,13 @@ export default function registerCurrencyCommands(client: Client) {
       option.setName("usuario")
         .setDescription("Usuario al que intentarás robar")
         .setRequired(true));
+
+  // Agregar comandos a la colección
+  commands.set(listCurrencies.name, listCurrencies.toJSON());
+  commands.set(checkBalance.name, checkBalance.toJSON());
+  commands.set(transferCurrency.name, transferCurrency.toJSON());
+  commands.set(work.name, work.toJSON());
+  commands.set(steal.name, steal.toJSON());
 
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
