@@ -1,8 +1,12 @@
-import { Client, SlashCommandBuilder } from "discord.js";
+import { Client, SlashCommandBuilder, EmbedBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONData } from "discord.js";
 import { storage } from "../../storage";
 
-export default function registerCharacterCommands(client: Client) {
-  const createCharacter = new SlashCommandBuilder()
+export default function registerCharacterCommands(
+  client: Client, 
+  commands: Collection<string, RESTPostAPIChatInputApplicationCommandsJSONData>
+) {
+  // Definir los comandos
+  const createCharacterCommand = new SlashCommandBuilder()
     .setName("crear-personaje")
     .setDescription("Crea una nueva hoja de personaje")
     .addStringOption(option =>
@@ -71,10 +75,15 @@ export default function registerCharacterCommands(client: Client) {
         .setDescription("URL de la imagen del personaje")
         .setRequired(false));
 
-  const viewCharacters = new SlashCommandBuilder()
+  const viewCharactersCommand = new SlashCommandBuilder()
     .setName("ver-personajes")
     .setDescription("Muestra tus personajes creados");
 
+  // Agregar comandos a la colección
+  commands.set(createCharacterCommand.name, createCharacterCommand.toJSON());
+  commands.set(viewCharactersCommand.name, viewCharactersCommand.toJSON());
+
+  // Manejar las interacciones de comandos
   client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -89,7 +98,7 @@ export default function registerCharacterCommands(client: Client) {
           .split(",")
           .map(lang => lang.trim())
           .filter(lang => lang.length > 0);
-        const imageUrl = interaction.options.getString("imagen") || null;
+        const imageUrl = interaction.options.getString("imagen");
 
         const character = await storage.createCharacter({
           guildId: interaction.guildId!,
@@ -103,21 +112,32 @@ export default function registerCharacterCommands(client: Client) {
           imageUrl
         });
 
-        await interaction.reply({
-          content: `¡Personaje "${name}" creado con éxito!\n` +
-            `Nivel: ${level}\n` +
-            `Clase: ${characterClass}\n` +
-            `Raza: ${race}\n` +
-            `Alineamiento: ${alignment}\n` +
-            `Idiomas: ${languages.join(", ")}\n` +
-            (imageUrl ? `Imagen: ${imageUrl}` : ""),
-          ephemeral: false
-        });
+        const embed = new EmbedBuilder()
+          .setTitle(`¡Personaje creado!`)
+          .setDescription(`**${name}** ha sido agregado a tu colección.`)
+          .addFields(
+            { name: 'Nivel', value: level.toString(), inline: true },
+            { name: 'Clase', value: characterClass, inline: true },
+            { name: 'Raza', value: race, inline: true },
+            { name: 'Alineamiento', value: alignment.replace('_', ' '), inline: true },
+            { name: 'Idiomas', value: languages.join(", "), inline: false }
+          )
+          .setTimestamp()
+          .setColor('#00ff00');
+
+        if (imageUrl) {
+          embed.setImage(imageUrl);
+        }
+
+        await interaction.reply({ embeds: [embed], ephemeral: false });
       } catch (error) {
-        await interaction.reply({
-          content: "Hubo un error al crear el personaje",
-          ephemeral: true
-        });
+        console.error("Error al crear personaje:", error);
+        if (!interaction.replied) {
+          await interaction.reply({
+            content: "Hubo un error al crear el personaje",
+            ephemeral: true
+          });
+        }
       }
     }
 
@@ -134,25 +154,43 @@ export default function registerCharacterCommands(client: Client) {
           return;
         }
 
-        const characterList = userCharacters.map(char => 
-          `**${char.name}** (Nivel ${char.level})\n` +
-          `• Clase: ${char.class}\n` +
-          `• Raza: ${char.race}\n` +
-          `• Alineamiento: ${char.alignment}\n` +
-          `• Idiomas: ${char.languages.join(", ")}\n` +
-          (char.imageUrl ? `• [Ver imagen](${char.imageUrl})\n` : "") +
-          `• Creado: ${char.createdAt.toLocaleDateString()}\n`
-        ).join("\n");
+        const embeds = userCharacters.map(char => {
+          const embed = new EmbedBuilder()
+            .setTitle(char.name)
+            .setDescription(`Nivel ${char.level} ${char.race} ${char.class}`)
+            .addFields(
+              { name: 'Clase', value: char.class, inline: true },
+              { name: 'Raza', value: char.race, inline: true },
+              { name: 'Nivel', value: char.level.toString(), inline: true },
+              { name: 'Alineamiento', value: char.alignment.replace('_', ' '), inline: true },
+              { name: 'Idiomas', value: char.languages.join(", "), inline: false },
+              { name: 'Creado', value: char.createdAt.toLocaleDateString(), inline: true }
+            )
+            .setTimestamp()
+            .setColor('#0099ff');
 
-        await interaction.reply({
-          content: `**Tus personajes:**\n\n${characterList}`,
-          ephemeral: true
+          if (char.imageUrl) {
+            embed.setImage(char.imageUrl);
+          }
+
+          return embed;
         });
+
+        if (!interaction.replied) {
+          await interaction.reply({
+            content: `**Tus personajes** (${userCharacters.length}):`,
+            embeds: embeds,
+            ephemeral: true
+          });
+        }
       } catch (error) {
-        await interaction.reply({
-          content: "Hubo un error al obtener los personajes",
-          ephemeral: true
-        });
+        console.error("Error al obtener personajes:", error);
+        if (!interaction.replied) {
+          await interaction.reply({
+            content: "Hubo un error al obtener los personajes",
+            ephemeral: true
+          });
+        }
       }
     }
   });
