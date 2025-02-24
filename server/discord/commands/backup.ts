@@ -11,12 +11,12 @@ export default function registerBackupCommands(
 ) {
   const exportData = new SlashCommandBuilder()
     .setName("exportar-datos")
-    .setDescription("Exporta todos los datos del servidor a archivos CSV")
+    .setDescription("Exporta todos los datos del servidor a un archivo CSV")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
   const importData = new SlashCommandBuilder()
     .setName("importar-datos")
-    .setDescription("Importa datos desde archivos CSV")
+    .setDescription("Importa datos desde un archivo CSV")
     .addAttachmentOption(option =>
       option.setName("archivo")
         .setDescription("Archivo CSV a importar")
@@ -39,21 +39,57 @@ export default function registerBackupCommands(
           fs.mkdirSync(backupDir);
         }
 
-        // Obtener todos los datos
-        const currencies = await storage.getCurrencies(interaction.guildId!);
-        const characters = await storage.getCharacters(interaction.guildId!);
-        const transactions = await storage.getTransactions(interaction.guildId!);
-        const settings = await storage.getGuildSettings(interaction.guildId!);
+        // Recopilar todos los datos
+        const allData = [];
 
-        // Preparar datos de balances
-        const balanceData = [];
-        for (const guildMember of interaction.guild!.members.cache.values()) {
-          const wallet = await storage.getUserWallet(interaction.guildId!, guildMember.id);
+        // Obtener monedas
+        const currencies = await storage.getCurrencies(interaction.guildId!);
+        for (const currency of currencies) {
+          allData.push({
+            type: 'currency',
+            ...currency
+          });
+        }
+
+        // Obtener personajes
+        const characters = await storage.getCharacters(interaction.guildId!);
+        for (const character of characters) {
+          allData.push({
+            type: 'character',
+            ...character,
+            languages: character.languages ? JSON.stringify(character.languages) : '[]',
+            createdAt: character.createdAt.toISOString()
+          });
+        }
+
+        // Obtener transacciones
+        const transactions = await storage.getTransactions(interaction.guildId!);
+        for (const transaction of transactions) {
+          allData.push({
+            type: 'transaction',
+            ...transaction,
+            timestamp: transaction.timestamp.toISOString()
+          });
+        }
+
+        // Obtener configuración del servidor
+        const settings = await storage.getGuildSettings(interaction.guildId!);
+        if (settings) {
+          allData.push({
+            type: 'settings',
+            ...settings
+          });
+        }
+
+        // Obtener balances de usuarios
+        for (const member of interaction.guild!.members.cache.values()) {
+          const wallet = await storage.getUserWallet(interaction.guildId!, member.id);
           if (wallet) {
             for (const currency of currencies) {
-              balanceData.push({
-                userId: guildMember.id,
-                username: guildMember.user.username,
+              allData.push({
+                type: 'balance',
+                userId: member.id,
+                username: member.user.username,
                 currencyName: currency.name,
                 currencySymbol: currency.symbol,
                 balance: wallet.wallet[currency.name] || 0,
@@ -64,51 +100,21 @@ export default function registerBackupCommands(
           }
         }
 
-        // Convertir a CSV
-        const currenciesCSV = stringify(currencies, { header: true });
-        const charactersCSV = stringify(characters, { header: true });
-        const transactionsCSV = stringify(transactions, { header: true });
-        const settingsCSV = stringify([settings], { header: true });
-        const balancesCSV = stringify(balanceData, { header: true });
-
-        // Guardar archivos
+        // Guardar todo en un solo archivo CSV
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const currenciesFile = path.join(backupDir, `currencies_${timestamp}.csv`);
-        const charactersFile = path.join(backupDir, `characters_${timestamp}.csv`);
-        const transactionsFile = path.join(backupDir, `transactions_${timestamp}.csv`);
-        const settingsFile = path.join(backupDir, `settings_${timestamp}.csv`);
-        const balancesFile = path.join(backupDir, `balances_${timestamp}.csv`);
+        const backupFile = path.join(backupDir, `backup_${timestamp}.csv`);
+        const csvContent = stringify(allData, { header: true });
+        fs.writeFileSync(backupFile, csvContent);
 
-        fs.writeFileSync(currenciesFile, currenciesCSV);
-        fs.writeFileSync(charactersFile, charactersCSV);
-        fs.writeFileSync(transactionsFile, transactionsCSV);
-        fs.writeFileSync(settingsFile, settingsCSV);
-        fs.writeFileSync(balancesFile, balancesCSV);
-
-        // Crear archivos adjuntos para Discord
-        const currenciesAttachment = new AttachmentBuilder(currenciesFile);
-        const charactersAttachment = new AttachmentBuilder(charactersFile);
-        const transactionsAttachment = new AttachmentBuilder(transactionsFile);
-        const settingsAttachment = new AttachmentBuilder(settingsFile);
-        const balancesAttachment = new AttachmentBuilder(balancesFile);
-
+        // Enviar el archivo
+        const attachment = new AttachmentBuilder(backupFile);
         await interaction.editReply({
           content: `Backup completado. Fecha: ${timestamp}`,
-          files: [
-            currenciesAttachment,
-            charactersAttachment,
-            transactionsAttachment,
-            settingsAttachment,
-            balancesAttachment
-          ]
+          files: [attachment]
         });
 
-        // Limpiar archivos temporales
-        fs.unlinkSync(currenciesFile);
-        fs.unlinkSync(charactersFile);
-        fs.unlinkSync(transactionsFile);
-        fs.unlinkSync(settingsFile);
-        fs.unlinkSync(balancesFile);
+        // Limpiar archivo temporal
+        fs.unlinkSync(backupFile);
 
       } catch (error) {
         console.error("Error al exportar datos:", error);
@@ -126,76 +132,100 @@ export default function registerBackupCommands(
           return;
         }
 
-        // Descargar archivo
+        // Descargar y parsear el archivo
         const response = await fetch(attachment.url);
         const csvContent = await response.text();
+        const records = parse(csvContent, { 
+          columns: true,
+          skip_empty_lines: true
+        });
 
-        // Parsear CSV
-        const records = parse(csvContent, { columns: true });
+        // Procesar registros por tipo
+        const processedTypes = new Set();
 
-        // Identificar tipo de datos basado en el nombre del archivo
-        if (attachment.name.includes('currencies')) {
-          for (const record of records) {
-            await storage.createCurrency({
-              guildId: interaction.guildId!,
-              name: record.name,
-              symbol: record.symbol
-            });
-          }
-        } else if (attachment.name.includes('characters')) {
-          for (const record of records) {
-            await storage.createCharacter({
-              guildId: interaction.guildId!,
-              userId: record.userId,
-              name: record.name,
-              level: parseInt(record.level),
-              class: record.class,
-              race: record.race,
-              rank: record.rank,
-              imageUrl: record.imageUrl,
-              n20Url: record.n20Url,
-              alignment: record.alignment || 'neutral',
-              languages: record.languages ? JSON.parse(record.languages) : []
-            });
-          }
-        } else if (attachment.name.includes('balances')) {
-          // Procesar usuarios únicos y sus balances
-          const userBalances = new Map();
+        for (const record of records) {
+          try {
+            switch (record.type) {
+              case 'currency':
+                await storage.createCurrency({
+                  guildId: interaction.guildId!,
+                  name: record.name,
+                  symbol: record.symbol
+                });
+                break;
 
-          for (const record of records) {
-            if (!userBalances.has(record.userId)) {
-              userBalances.set(record.userId, {
-                guildId: interaction.guildId!,
-                userId: record.userId,
-                wallet: {},
-                lastWorked: record.lastWorked ? new Date(record.lastWorked) : null,
-                lastStolen: record.lastStolen ? new Date(record.lastStolen) : null
-              });
+              case 'character':
+                await storage.createCharacter({
+                  guildId: interaction.guildId!,
+                  userId: record.userId,
+                  name: record.name,
+                  level: parseInt(record.level),
+                  class: record.class,
+                  race: record.race,
+                  rank: record.rank || 'Rango E',
+                  alignment: record.alignment || 'neutral',
+                  languages: record.languages ? JSON.parse(record.languages) : [],
+                  imageUrl: record.imageUrl || null,
+                  n20Url: record.n20Url || null
+                });
+                break;
+
+              case 'balance':
+                if (!processedTypes.has('balance')) {
+                  // Procesar todos los balances juntos
+                  const balances = records.filter(r => r.type === 'balance');
+                  const userBalances = new Map();
+
+                  for (const balanceRecord of balances) {
+                    if (!userBalances.has(balanceRecord.userId)) {
+                      userBalances.set(balanceRecord.userId, {
+                        guildId: interaction.guildId!,
+                        userId: balanceRecord.userId,
+                        wallet: {},
+                        lastWorked: balanceRecord.lastWorked ? new Date(balanceRecord.lastWorked) : null,
+                        lastStolen: balanceRecord.lastStolen ? new Date(balanceRecord.lastStolen) : null
+                      });
+                    }
+
+                    const userWallet = userBalances.get(balanceRecord.userId);
+                    userWallet.wallet[balanceRecord.currencyName] = parseInt(balanceRecord.balance);
+                  }
+
+                  // Actualizar billeteras
+                  for (const [userId, walletData] of userBalances) {
+                    let wallet = await storage.getUserWallet(interaction.guildId!, userId);
+                    if (!wallet) {
+                      wallet = await storage.createUserWallet({
+                        guildId: interaction.guildId!,
+                        userId: userId
+                      });
+                    }
+                    await storage.updateUserWallet(
+                      wallet.id,
+                      walletData.wallet,
+                      walletData.lastWorked,
+                      walletData.lastStolen
+                    );
+                  }
+
+                  processedTypes.add('balance');
+                }
+                break;
+
+              case 'settings':
+                await storage.setTransactionLogChannel(
+                  interaction.guildId!,
+                  record.transactionLogChannel
+                );
+                break;
             }
-
-            const userWallet = userBalances.get(record.userId);
-            userWallet.wallet[record.currencyName] = parseInt(record.balance);
-          }
-
-          // Crear o actualizar billeteras
-          for (const [userId, walletData] of userBalances) {
-            let wallet = await storage.getUserWallet(interaction.guildId!, userId);
-            if (!wallet) {
-              wallet = await storage.createUserWallet({
-                guildId: interaction.guildId!,
-                userId: userId
-              });
-            }
-            await storage.updateUserWallet(
-              wallet.id,
-              walletData.wallet,
-              walletData.lastWorked,
-              walletData.lastStolen
-            );
+          } catch (error) {
+            console.error(`Error procesando registro de tipo ${record.type}:`, error);
+            // Continuar con el siguiente registro
           }
         }
 
-        await interaction.editReply(`Datos importados exitosamente de ${attachment.name}`);
+        await interaction.editReply("Datos importados exitosamente.");
       } catch (error) {
         console.error("Error al importar datos:", error);
         await interaction.editReply("Hubo un error al importar los datos. Asegúrate de que el archivo CSV tenga el formato correcto.");
