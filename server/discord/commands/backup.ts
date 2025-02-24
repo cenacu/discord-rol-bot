@@ -57,7 +57,7 @@ export default function registerBackupCommands(
           allData.push({
             type: 'character',
             ...character,
-            languages: character.languages ? JSON.stringify(character.languages) : '[]',
+            languages: Array.isArray(character.languages) ? JSON.stringify(character.languages) : '[]',
             createdAt: character.createdAt.toISOString()
           });
         }
@@ -82,7 +82,8 @@ export default function registerBackupCommands(
         }
 
         // Obtener balances de usuarios
-        for (const member of interaction.guild!.members.cache.values()) {
+        const cachedMembers = [...interaction.guild!.members.cache.values()];
+        for (const member of cachedMembers) {
           const wallet = await storage.getUserWallet(interaction.guildId!, member.id);
           if (wallet) {
             for (const currency of currencies) {
@@ -141,7 +142,8 @@ export default function registerBackupCommands(
         });
 
         // Procesar registros por tipo
-        const processedTypes = new Set();
+        const processedTypes = new Set<string>();
+        const errors: string[] = [];
 
         for (const record of records) {
           try {
@@ -172,9 +174,14 @@ export default function registerBackupCommands(
 
               case 'balance':
                 if (!processedTypes.has('balance')) {
-                  // Procesar todos los balances juntos
-                  const balances = records.filter(r => r.type === 'balance');
-                  const userBalances = new Map();
+                  const balances = records.filter((r: any) => r.type === 'balance');
+                  const userBalances = new Map<string, {
+                    guildId: string;
+                    userId: string;
+                    wallet: Record<string, number>;
+                    lastWorked: Date | null;
+                    lastStolen: Date | null;
+                  }>();
 
                   for (const balanceRecord of balances) {
                     if (!userBalances.has(balanceRecord.userId)) {
@@ -187,12 +194,11 @@ export default function registerBackupCommands(
                       });
                     }
 
-                    const userWallet = userBalances.get(balanceRecord.userId);
+                    const userWallet = userBalances.get(balanceRecord.userId)!;
                     userWallet.wallet[balanceRecord.currencyName] = parseInt(balanceRecord.balance);
                   }
 
-                  // Actualizar billeteras
-                  for (const [userId, walletData] of userBalances) {
+                  for (const [userId, walletData] of userBalances.entries()) {
                     let wallet = await storage.getUserWallet(interaction.guildId!, userId);
                     if (!wallet) {
                       wallet = await storage.createUserWallet({
@@ -213,19 +219,25 @@ export default function registerBackupCommands(
                 break;
 
               case 'settings':
-                await storage.setTransactionLogChannel(
-                  interaction.guildId!,
-                  record.transactionLogChannel
-                );
+                if (record.transactionLogChannel) {
+                  await storage.setTransactionLogChannel(
+                    interaction.guildId!,
+                    record.transactionLogChannel
+                  );
+                }
                 break;
             }
           } catch (error) {
             console.error(`Error procesando registro de tipo ${record.type}:`, error);
-            // Continuar con el siguiente registro
+            errors.push(`Error en ${record.type}: ${record.name || 'sin nombre'}`);
           }
         }
 
-        await interaction.editReply("Datos importados exitosamente.");
+        if (errors.length > 0) {
+          await interaction.editReply(`Datos importados con algunos errores:\n${errors.join('\n')}`);
+        } else {
+          await interaction.editReply("Datos importados exitosamente.");
+        }
       } catch (error) {
         console.error("Error al importar datos:", error);
         await interaction.editReply("Hubo un error al importar los datos. Asegúrate de que el archivo CSV tenga el formato correcto.");
