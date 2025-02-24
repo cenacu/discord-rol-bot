@@ -1,3 +1,5 @@
+import { docClient, TableNames } from "./dynamodb";
+import { PutCommand, GetCommand, QueryCommand, DeleteCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { currencies, userWallets, guildSettings, transactions, characters, 
   type Currency, type UserWallet, type GuildSettings, type Transaction, type Character,
   type InsertCurrency, type InsertUserWallet, type InsertGuildSettings, type InsertTransaction, type InsertCharacter 
@@ -13,10 +15,10 @@ export interface IStorage {
   getUserWallet(guildId: string, userId: string): Promise<UserWallet | undefined>;
   createUserWallet(wallet: InsertUserWallet): Promise<UserWallet>;
   updateUserWallet(
-    id: number, 
-    wallet: Record<string, number>, 
+    id: number,
+    wallet: Record<string, number>,
     lastWorked?: Date,
-    lastStolen?: Date // Nuevo parámetro opcional
+    lastStolen?: Date
   ): Promise<UserWallet>;
 
   // Guild settings operations
@@ -42,122 +44,188 @@ export interface IStorage {
   deleteCharacter(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private currencies: Map<number, Currency>;
-  private wallets: Map<number, UserWallet>;
-  private settings: Map<number, GuildSettings>;
-  private transactions: Map<number, Transaction>;
-  private characters: Map<number, Character>;
-  private currencyId: number;
-  private walletId: number;
-  private transactionId: number;
-  private settingsId: number;
-  private characterId: number;
-
-  constructor() {
-    this.currencies = new Map();
-    this.wallets = new Map();
-    this.settings = new Map();
-    this.transactions = new Map();
-    this.characters = new Map();
-    this.currencyId = 1;
-    this.walletId = 1;
-    this.transactionId = 1;
-    this.settingsId = 1;
-    this.characterId = 1;
-  }
-
+export class DynamoDBStorage implements IStorage {
   async getCurrencies(guildId: string): Promise<Currency[]> {
-    return Array.from(this.currencies.values()).filter(c => c.guildId === guildId);
+    const response = await docClient.send(
+      new QueryCommand({
+        TableName: TableNames.CURRENCIES,
+        KeyConditionExpression: "guildId = :guildId",
+        ExpressionAttributeValues: {
+          ":guildId": guildId
+        }
+      })
+    );
+    return response.Items as Currency[] || [];
   }
 
   async createCurrency(currency: InsertCurrency): Promise<Currency> {
-    const id = this.currencyId++;
-    const newCurrency = { ...currency, id };
-    this.currencies.set(id, newCurrency);
+    const newCurrency = {
+      id: Date.now(), // Usar timestamp como ID
+      ...currency
+    };
+
+    await docClient.send(
+      new PutCommand({
+        TableName: TableNames.CURRENCIES,
+        Item: newCurrency
+      })
+    );
+
     return newCurrency;
   }
 
   async deleteCurrency(guildId: string, name: string): Promise<boolean> {
-    const currency = Array.from(this.currencies.values()).find(
-      c => c.guildId === guildId && c.name === name
-    );
-    if (currency) {
-      this.currencies.delete(currency.id);
+    try {
+      await docClient.send(
+        new DeleteCommand({
+          TableName: TableNames.CURRENCIES,
+          Key: {
+            guildId: guildId,
+            name: name
+          }
+        })
+      );
       return true;
+    } catch (error) {
+      console.error("Error deleting currency:", error);
+      return false;
     }
-    return false;
   }
 
   async getUserWallet(guildId: string, userId: string): Promise<UserWallet | undefined> {
-    return Array.from(this.wallets.values()).find(
-      w => w.guildId === guildId && w.userId === userId
+    const response = await docClient.send(
+      new GetCommand({
+        TableName: TableNames.USER_WALLETS,
+        Key: {
+          guildId: guildId,
+          userId: userId
+        }
+      })
     );
+    return response.Item as UserWallet | undefined;
   }
 
   async createUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
-    const id = this.walletId++;
-    const newWallet = { ...wallet, id, wallet: {}, lastWorked: null, lastStolen: null };
-    this.wallets.set(id, newWallet);
+    const newWallet: UserWallet = {
+      id: Date.now(),
+      ...wallet,
+      wallet: {},
+      lastWorked: null,
+      lastStolen: null
+    };
+
+    await docClient.send(
+      new PutCommand({
+        TableName: TableNames.USER_WALLETS,
+        Item: newWallet
+      })
+    );
+
     return newWallet;
   }
 
   async updateUserWallet(
-    id: number, 
-    wallet: Record<string, number>, 
+    id: number,
+    wallet: Record<string, number>,
     lastWorked?: Date,
     lastStolen?: Date
   ): Promise<UserWallet> {
-    const userWallet = this.wallets.get(id);
-    if (!userWallet) throw new Error("Wallet not found");
+    // Primero obtenemos el registro existente para conseguir guildId y userId
+    const existingWallet = await this.getUserWalletById(id);
+    if (!existingWallet) {
+      throw new Error(`Wallet with id ${id} not found`);
+    }
 
-    const updated = { 
-      ...userWallet, 
+    const updatedWallet = {
+      ...existingWallet,
       wallet,
-      lastWorked: lastWorked || userWallet.lastWorked,
-      lastStolen: lastStolen || userWallet.lastStolen 
+      lastWorked: lastWorked?.toISOString() || null,
+      lastStolen: lastStolen?.toISOString() || null
     };
-    this.wallets.set(id, updated);
-    return updated;
+
+    await docClient.send(
+      new UpdateCommand({
+        TableName: TableNames.USER_WALLETS,
+        Key: {
+          guildId: existingWallet.guildId,
+          userId: existingWallet.userId
+        },
+        UpdateExpression: "set wallet = :w, lastWorked = :lw, lastStolen = :ls",
+        ExpressionAttributeValues: {
+          ":w": wallet,
+          ":lw": updatedWallet.lastWorked,
+          ":ls": updatedWallet.lastStolen
+        }
+      })
+    );
+
+    return updatedWallet;
   }
 
   async getGuildSettings(guildId: string): Promise<GuildSettings | undefined> {
-    return Array.from(this.settings.values()).find(s => s.guildId === guildId);
+    const response = await docClient.send(
+      new GetCommand({
+        TableName: TableNames.GUILD_SETTINGS,
+        Key: {
+          guildId: guildId
+        }
+      })
+    );
+    return response.Item as GuildSettings | undefined;
   }
 
   async setTransactionLogChannel(guildId: string, channelId: string): Promise<GuildSettings> {
-    const existing = await this.getGuildSettings(guildId);
-    if (existing) {
-      const updated = { ...existing, transactionLogChannel: channelId };
-      this.settings.set(existing.id, updated);
-      return updated;
-    }
-
-    const id = this.settingsId++;
-    const newSettings: GuildSettings = {
-      id,
+    const settings: GuildSettings = {
+      id: Date.now(),
       guildId,
       transactionLogChannel: channelId
     };
-    this.settings.set(id, newSettings);
-    return newSettings;
+
+    await docClient.send(
+      new PutCommand({
+        TableName: TableNames.GUILD_SETTINGS,
+        Item: settings
+      })
+    );
+
+    return settings;
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
-    const id = this.transactionId++;
-    const newTransaction = {
+    const newTransaction: Transaction = {
+      id: Date.now(),
       ...transaction,
-      id,
       timestamp: new Date()
     };
-    this.transactions.set(id, newTransaction);
+
+    await docClient.send(
+      new PutCommand({
+        TableName: TableNames.TRANSACTIONS,
+        Item: {
+          ...newTransaction,
+          timestamp: newTransaction.timestamp.toISOString()
+        }
+      })
+    );
+
     return newTransaction;
   }
 
   async getTransactions(guildId: string): Promise<Transaction[]> {
-    return Array.from(this.transactions.values())
-      .filter(t => t.guildId === guildId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const response = await docClient.send(
+      new QueryCommand({
+        TableName: TableNames.TRANSACTIONS,
+        KeyConditionExpression: "guildId = :guildId",
+        ExpressionAttributeValues: {
+          ":guildId": guildId
+        }
+      })
+    );
+
+    return (response.Items || []).map(item => ({
+      ...item,
+      timestamp: new Date(item.timestamp)
+    })) as Transaction[];
   }
 
   async transferCurrency(
@@ -204,56 +272,164 @@ export class MemStorage implements IStorage {
   }
 
   async createCharacter(character: InsertCharacter): Promise<Character> {
-    const id = this.characterId++;
-    const newCharacter = { 
-      ...character, 
-      id,
+    const newCharacter: Character = {
+      id: Date.now(),
+      ...character,
       createdAt: new Date(),
       imageUrl: character.imageUrl ?? null,
       n20Url: character.n20Url ?? null,
-      rank: character.rank || 'Rango E' 
+      rank: character.rank || 'Rango E'
     };
-    this.characters.set(id, newCharacter);
+
+    await docClient.send(
+      new PutCommand({
+        TableName: TableNames.CHARACTERS,
+        Item: {
+          ...newCharacter,
+          createdAt: newCharacter.createdAt.toISOString(),
+          languages: character.languages || []
+        }
+      })
+    );
+
     return newCharacter;
   }
 
   async getCharacter(guildId: string, userId: string): Promise<Character | undefined> {
-    return Array.from(this.characters.values()).find(
-      c => c.guildId === guildId && c.userId === userId
+    const response = await docClient.send(
+      new QueryCommand({
+        TableName: TableNames.CHARACTERS,
+        KeyConditionExpression: "guildId = :guildId and userId = :userId",
+        ExpressionAttributeValues: {
+          ":guildId": guildId,
+          ":userId": userId
+        }
+      })
     );
+
+    const character = response.Items?.[0];
+    return character ? {
+      ...character,
+      createdAt: new Date(character.createdAt)
+    } as Character : undefined;
   }
 
   async getCharacters(guildId: string): Promise<Character[]> {
-    return Array.from(this.characters.values())
-      .filter(c => c.guildId === guildId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const response = await docClient.send(
+      new QueryCommand({
+        TableName: TableNames.CHARACTERS,
+        KeyConditionExpression: "guildId = :guildId",
+        ExpressionAttributeValues: {
+          ":guildId": guildId
+        }
+      })
+    );
+
+    return (response.Items || []).map(character => ({
+      ...character,
+      createdAt: new Date(character.createdAt)
+    })) as Character[];
   }
 
   async updateCharacter(id: number, character: Partial<InsertCharacter>): Promise<Character> {
-    const existing = this.characters.get(id);
-    if (!existing) throw new Error("Character not found");
+    // Primero obtenemos el registro existente para conseguir guildId
+    const existingCharacter = await this.getCharacterById(id);
+    if (!existingCharacter) {
+      throw new Error(`Character with id ${id} not found`);
+    }
 
-    const updated = { ...existing, ...character };
-    this.characters.set(id, updated);
-    return updated;
+    const updateExpressions: string[] = [];
+    const expressionAttributeValues: Record<string, any> = {};
+    const expressionAttributeNames: Record<string, string> = {};
+
+    Object.entries(character).forEach(([key, value]) => {
+      const attributeKey = `:${key}`;
+      const nameKey = `#${key}`;
+      updateExpressions.push(`${nameKey} = ${attributeKey}`);
+      expressionAttributeValues[attributeKey] = value;
+      expressionAttributeNames[nameKey] = key;
+    });
+
+    await docClient.send(
+      new UpdateCommand({
+        TableName: TableNames.CHARACTERS,
+        Key: {
+          guildId: existingCharacter.guildId,
+          userId: existingCharacter.userId
+        },
+        UpdateExpression: `set ${updateExpressions.join(', ')}`,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ExpressionAttributeNames: expressionAttributeNames
+      })
+    );
+
+    // Obtener el personaje actualizado
+    const updatedCharacter = await this.getCharacter(existingCharacter.guildId, existingCharacter.userId);
+    if (!updatedCharacter) {
+      throw new Error(`Failed to retrieve updated character with id ${id}`);
+    }
+
+    return updatedCharacter;
   }
 
   async deleteCharacter(id: number): Promise<boolean> {
-    return this.characters.delete(id);
+    try {
+      const character = await this.getCharacterById(id);
+      if (!character) {
+        return false;
+      }
+
+      await docClient.send(
+        new DeleteCommand({
+          TableName: TableNames.CHARACTERS,
+          Key: {
+            guildId: character.guildId,
+            userId: character.userId
+          }
+        })
+      );
+      return true;
+    } catch (error) {
+      console.error("Error deleting character:", error);
+      return false;
+    }
   }
 
-  reset() {
-    this.currencies.clear();
-    this.wallets.clear();
-    this.settings.clear();
-    this.transactions.clear();
-    this.characters.clear();
-    this.currencyId = 1;
-    this.walletId = 1;
-    this.transactionId = 1;
-    this.settingsId = 1;
-    this.characterId = 1;
+  // Método auxiliar para obtener wallet por ID
+  private async getUserWalletById(id: number): Promise<UserWallet | undefined> {
+    const response = await docClient.send(
+      new QueryCommand({
+        TableName: TableNames.USER_WALLETS,
+        IndexName: "IdIndex",
+        KeyConditionExpression: "id = :id",
+        ExpressionAttributeValues: {
+          ":id": id
+        }
+      })
+    );
+
+    return response.Items?.[0] as UserWallet | undefined;
+  }
+
+  // Método auxiliar para obtener character por ID
+  private async getCharacterById(id: number): Promise<Character | undefined> {
+    const response = await docClient.send(
+      new QueryCommand({
+        TableName: TableNames.CHARACTERS,
+        IndexName: "IdIndex",
+        KeyConditionExpression: "id = :id",
+        ExpressionAttributeValues: {
+          ":id": id
+        }
+      })
+    );
+
+    const character = response.Items?.[0];
+    return character ? {
+      ...character,
+      createdAt: new Date(character.createdAt)
+    } as Character : undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DynamoDBStorage();
