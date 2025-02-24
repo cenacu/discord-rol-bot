@@ -147,8 +147,8 @@ export class DynamoDBStorage implements IStorage {
     const updatedWallet = {
       ...existingWallet,
       wallet,
-      lastWorked: lastWorked?.toISOString() || null,
-      lastStolen: lastStolen?.toISOString() || null
+      lastWorked: lastWorked ? lastWorked.toISOString() : existingWallet.lastWorked,
+      lastStolen: lastStolen ? lastStolen.toISOString() : existingWallet.lastStolen
     };
 
     await docClient.send(
