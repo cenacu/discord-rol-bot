@@ -62,7 +62,7 @@ export default function registerMoneyCommands(
         if (!currency) {
           await interaction.reply({
             content: "Moneda no encontrada",
-            ephemeral: true
+            flags: { ephemeral: true }
           });
           return;
         }
@@ -72,7 +72,7 @@ export default function registerMoneyCommands(
         if (currentBalance < amount) {
           await interaction.reply({
             content: `No tienes suficientes ${currency.symbol} para descontar`,
-            ephemeral: true
+            flags: { ephemeral: true }
           });
           return;
         }
@@ -111,7 +111,7 @@ export default function registerMoneyCommands(
         console.error("Error al descontar dinero:", error);
         await interaction.reply({
           content: "Hubo un error al descontar el dinero",
-          ephemeral: true
+          flags: { ephemeral: true }
         });
       }
     }
@@ -137,7 +137,7 @@ export default function registerMoneyCommands(
         if (!currency) {
           await interaction.reply({
             content: "Moneda no encontrada",
-            ephemeral: true
+            flags: { ephemeral: true }
           });
           return;
         }
@@ -177,7 +177,7 @@ export default function registerMoneyCommands(
         console.error("Error al agregar dinero:", error);
         await interaction.reply({
           content: "Hubo un error al agregar el dinero",
-          ephemeral: true
+          flags: { ephemeral: true }
         });
       }
     }

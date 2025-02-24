@@ -157,7 +157,7 @@ Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
         } else {
           await interaction.reply({
             content: `No se encontró una moneda llamada "${name}"`,
-            ephemeral: true
+            flags: { ephemeral: true }
           });
         }
       } catch (error) {
