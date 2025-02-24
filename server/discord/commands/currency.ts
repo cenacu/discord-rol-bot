@@ -297,8 +297,9 @@ export default function registerCurrencyCommands(
 
         // Verificar cooldown de robo
         const now = new Date();
-        if (toWallet.lastStolen) {
-          const timeSinceLastSteal = now.getTime() - toWallet.lastStolen.getTime();
+        const lastStolenDate = toWallet.lastStolen ? new Date(toWallet.lastStolen) : null;
+        if (lastStolenDate) {
+          const timeSinceLastSteal = now.getTime() - lastStolenDate.getTime();
           const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
 
           if (timeSinceLastSteal < threeDaysInMs) {
