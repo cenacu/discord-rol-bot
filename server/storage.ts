@@ -102,7 +102,15 @@ export class DynamoDBStorage implements IStorage {
         }
       })
     );
-    return response.Item as UserWallet | undefined;
+    
+    if (!response.Item) return undefined;
+    
+    const wallet = response.Item as UserWallet;
+    return {
+      ...wallet,
+      lastWorked: wallet.lastWorked ? new Date(wallet.lastWorked) : null,
+      lastStolen: wallet.lastStolen ? new Date(wallet.lastStolen) : null
+    };
   }
 
   async createUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
