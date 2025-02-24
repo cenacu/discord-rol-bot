@@ -11,7 +11,7 @@ export default function registerBackupCommands(
 ) {
   const exportData = new SlashCommandBuilder()
     .setName("exportar-datos")
-    .setDescription("Exporta todos los datos del servidor a un archivo CSV")
+    .setDescription("Exporta los datos del servidor (monedas, personajes y balances)")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
   const importData = new SlashCommandBuilder()
@@ -39,55 +39,30 @@ export default function registerBackupCommands(
           fs.mkdirSync(backupDir);
         }
 
-        // Recopilar todos los datos
-        const allData = [];
-
         // Obtener monedas
         const currencies = await storage.getCurrencies(interaction.guildId!);
-        for (const currency of currencies) {
-          allData.push({
-            type: 'currency',
-            ...currency
-          });
-        }
+        const currenciesData = currencies.map(c => ({
+          ...c,
+          type: 'currency'
+        }));
 
         // Obtener personajes
         const characters = await storage.getCharacters(interaction.guildId!);
-        for (const character of characters) {
-          allData.push({
-            type: 'character',
-            ...character,
-            languages: Array.isArray(character.languages) ? JSON.stringify(character.languages) : '[]',
-            createdAt: character.createdAt.toISOString()
-          });
-        }
-
-        // Obtener transacciones
-        const transactions = await storage.getTransactions(interaction.guildId!);
-        for (const transaction of transactions) {
-          allData.push({
-            type: 'transaction',
-            ...transaction,
-            timestamp: transaction.timestamp.toISOString()
-          });
-        }
-
-        // Obtener configuración del servidor
-        const settings = await storage.getGuildSettings(interaction.guildId!);
-        if (settings) {
-          allData.push({
-            type: 'settings',
-            ...settings
-          });
-        }
+        const charactersData = characters.map(c => ({
+          ...c,
+          type: 'character',
+          createdAt: c.createdAt.toISOString(),
+          languages: Array.isArray(c.languages) ? JSON.stringify(c.languages) : '[]'
+        }));
 
         // Obtener balances de usuarios
+        const balancesData = [];
         const cachedMembers = [...interaction.guild!.members.cache.values()];
         for (const member of cachedMembers) {
           const wallet = await storage.getUserWallet(interaction.guildId!, member.id);
           if (wallet) {
             for (const currency of currencies) {
-              allData.push({
+              balancesData.push({
                 type: 'balance',
                 userId: member.id,
                 username: member.user.username,
@@ -101,21 +76,31 @@ export default function registerBackupCommands(
           }
         }
 
-        // Guardar todo en un solo archivo CSV
+        // Guardar archivos
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupFile = path.join(backupDir, `backup_${timestamp}.csv`);
-        const csvContent = stringify(allData, { header: true });
-        fs.writeFileSync(backupFile, csvContent);
 
-        // Enviar el archivo
-        const attachment = new AttachmentBuilder(backupFile);
+        const currenciesFile = path.join(backupDir, `currencies_${timestamp}.csv`);
+        const charactersFile = path.join(backupDir, `characters_${timestamp}.csv`);
+        const balancesFile = path.join(backupDir, `balances_${timestamp}.csv`);
+
+        fs.writeFileSync(currenciesFile, stringify(currenciesData, { header: true }));
+        fs.writeFileSync(charactersFile, stringify(charactersData, { header: true }));
+        fs.writeFileSync(balancesFile, stringify(balancesData, { header: true }));
+
+        // Crear archivos adjuntos para Discord
+        const currenciesAttachment = new AttachmentBuilder(currenciesFile);
+        const charactersAttachment = new AttachmentBuilder(charactersFile);
+        const balancesAttachment = new AttachmentBuilder(balancesFile);
+
         await interaction.editReply({
           content: `Backup completado. Fecha: ${timestamp}`,
-          files: [attachment]
+          files: [currenciesAttachment, charactersAttachment, balancesAttachment]
         });
 
-        // Limpiar archivo temporal
-        fs.unlinkSync(backupFile);
+        // Limpiar archivos temporales
+        fs.unlinkSync(currenciesFile);
+        fs.unlinkSync(charactersFile);
+        fs.unlinkSync(balancesFile);
 
       } catch (error) {
         console.error("Error al exportar datos:", error);
@@ -138,105 +123,93 @@ export default function registerBackupCommands(
         const csvContent = await response.text();
         const records = parse(csvContent, { 
           columns: true,
-          skip_empty_lines: true
+          skip_empty_lines: true 
         });
 
-        // Procesar registros por tipo
-        const processedTypes = new Set<string>();
         const errors: string[] = [];
 
-        for (const record of records) {
-          try {
-            switch (record.type) {
-              case 'currency':
-                await storage.createCurrency({
-                  guildId: interaction.guildId!,
-                  name: record.name,
-                  symbol: record.symbol
-                });
-                break;
-
-              case 'character':
-                await storage.createCharacter({
-                  guildId: interaction.guildId!,
-                  userId: record.userId,
-                  name: record.name,
-                  level: parseInt(record.level),
-                  class: record.class,
-                  race: record.race,
-                  rank: record.rank || 'Rango E',
-                  alignment: record.alignment || 'neutral',
-                  languages: record.languages ? JSON.parse(record.languages) : [],
-                  imageUrl: record.imageUrl || null,
-                  n20Url: record.n20Url || null
-                });
-                break;
-
-              case 'balance':
-                if (!processedTypes.has('balance')) {
-                  const balances = records.filter((r: any) => r.type === 'balance');
-                  const userBalances = new Map<string, {
-                    guildId: string;
-                    userId: string;
-                    wallet: Record<string, number>;
-                    lastWorked: Date | null;
-                    lastStolen: Date | null;
-                  }>();
-
-                  for (const balanceRecord of balances) {
-                    if (!userBalances.has(balanceRecord.userId)) {
-                      userBalances.set(balanceRecord.userId, {
-                        guildId: interaction.guildId!,
-                        userId: balanceRecord.userId,
-                        wallet: {},
-                        lastWorked: balanceRecord.lastWorked ? new Date(balanceRecord.lastWorked) : null,
-                        lastStolen: balanceRecord.lastStolen ? new Date(balanceRecord.lastStolen) : null
-                      });
-                    }
-
-                    const userWallet = userBalances.get(balanceRecord.userId)!;
-                    userWallet.wallet[balanceRecord.currencyName] = parseInt(balanceRecord.balance);
-                  }
-
-                  for (const [userId, walletData] of userBalances.entries()) {
-                    let wallet = await storage.getUserWallet(interaction.guildId!, userId);
-                    if (!wallet) {
-                      wallet = await storage.createUserWallet({
-                        guildId: interaction.guildId!,
-                        userId: userId
-                      });
-                    }
-                    await storage.updateUserWallet(
-                      wallet.id,
-                      walletData.wallet,
-                      walletData.lastWorked,
-                      walletData.lastStolen
-                    );
-                  }
-
-                  processedTypes.add('balance');
-                }
-                break;
-
-              case 'settings':
-                if (record.transactionLogChannel) {
-                  await storage.setTransactionLogChannel(
-                    interaction.guildId!,
-                    record.transactionLogChannel
-                  );
-                }
-                break;
+        // Identificar tipo de archivo y procesar
+        if (attachment.name.includes('currencies')) {
+          for (const record of records) {
+            try {
+              await storage.createCurrency({
+                guildId: interaction.guildId!,
+                name: record.name,
+                symbol: record.symbol
+              });
+            } catch (error) {
+              errors.push(`Error al importar moneda: ${record.name}`);
             }
-          } catch (error) {
-            console.error(`Error procesando registro de tipo ${record.type}:`, error);
-            errors.push(`Error en ${record.type}: ${record.name || 'sin nombre'}`);
+          }
+        } else if (attachment.name.includes('characters')) {
+          for (const record of records) {
+            try {
+              await storage.createCharacter({
+                guildId: interaction.guildId!,
+                userId: record.userId,
+                name: record.name,
+                level: parseInt(record.level),
+                class: record.class,
+                race: record.race,
+                rank: record.rank || 'Rango E',
+                alignment: record.alignment || 'neutral',
+                languages: record.languages ? JSON.parse(record.languages) : [],
+                imageUrl: record.imageUrl || null,
+                n20Url: record.n20Url || null
+              });
+            } catch (error) {
+              errors.push(`Error al importar personaje: ${record.name}`);
+            }
+          }
+        } else if (attachment.name.includes('balances')) {
+          const userBalances = new Map<string, {
+            guildId: string;
+            userId: string;
+            wallet: Record<string, number>;
+            lastWorked: Date | null;
+            lastStolen: Date | null;
+          }>();
+
+          for (const record of records) {
+            if (!userBalances.has(record.userId)) {
+              userBalances.set(record.userId, {
+                guildId: interaction.guildId!,
+                userId: record.userId,
+                wallet: {},
+                lastWorked: record.lastWorked ? new Date(record.lastWorked) : null,
+                lastStolen: record.lastStolen ? new Date(record.lastStolen) : null
+              });
+            }
+
+            const userWallet = userBalances.get(record.userId)!;
+            userWallet.wallet[record.currencyName] = parseInt(record.balance);
+          }
+
+          for (const [userId, walletData] of userBalances.entries()) {
+            try {
+              let wallet = await storage.getUserWallet(interaction.guildId!, userId);
+              if (!wallet) {
+                wallet = await storage.createUserWallet({
+                  guildId: interaction.guildId!,
+                  userId: userId
+                });
+              }
+              await storage.updateUserWallet(
+                wallet.id,
+                walletData.wallet,
+                walletData.lastWorked,
+                walletData.lastStolen
+              );
+            } catch (error) {
+              errors.push(`Error al importar balance de usuario: ${userId}`);
+            }
           }
         }
 
         if (errors.length > 0) {
           await interaction.editReply(`Datos importados con algunos errores:\n${errors.join('\n')}`);
         } else {
-          await interaction.editReply("Datos importados exitosamente.");
+          await interaction.editReply(`Datos importados exitosamente de ${attachment.name}`);
         }
       } catch (error) {
         console.error("Error al importar datos:", error);
