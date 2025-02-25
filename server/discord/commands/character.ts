@@ -85,26 +85,12 @@ export default function registerCharacterCommands(
   const editCharacterCommand = new SlashCommandBuilder()
     .setName("editar-personaje")
     .setDescription("Edita el nivel o rango de uno de tus personajes")
-    .addStringOption(async option => {
-      const baseOption = option
+    .addStringOption(option =>
+      option
         .setName("nombre")
         .setDescription("Nombre del personaje a editar")
-        .setRequired(true);
-
-      try {
-        const characters = await storage.getCharacters(interaction.guildId!);
-        const userCharacters = characters.filter(c => c.userId === interaction.user.id);
-        return baseOption.addChoices(
-          ...userCharacters.map(char => ({
-            name: char.name,
-            value: char.name
-          }))
-        );
-      } catch (error) {
-        console.error("Error loading characters for choices:", error);
-        return baseOption;
-      }
-    })
+        .setRequired(true)
+        .setAutocomplete(true))
     .addIntegerOption(option =>
       option.setName("nivel")
         .setDescription("Nuevo nivel del personaje")
@@ -129,6 +115,28 @@ export default function registerCharacterCommands(
   commands.set(editCharacterCommand.name, editCharacterCommand.toJSON());
 
   client.on("interactionCreate", async interaction => {
+    if (interaction.isAutocomplete()) {
+      if (interaction.commandName === "editar-personaje" && interaction.options.getFocused().name === "nombre") {
+        try {
+          const characters = await storage.getCharacters(interaction.guildId!);
+          const userCharacters = characters.filter(c => c.userId === interaction.user.id);
+          const focusedValue = interaction.options.getFocused().value.toLowerCase();
+          const filtered = userCharacters
+            .filter(char => char.name.toLowerCase().includes(focusedValue))
+            .map(char => ({
+              name: char.name,
+              value: char.name
+            }));
+          
+          await interaction.respond(filtered.slice(0, 25));
+        } catch (error) {
+          console.error("Error in autocomplete:", error);
+          await interaction.respond([]);
+        }
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === "crear-personaje") {
