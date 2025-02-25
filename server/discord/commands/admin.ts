@@ -9,7 +9,7 @@ export const hardReset = new SlashCommandBuilder()
   .setDescription("Resetea toda la base de datos (¡Cuidado!)");
 
 export async function handleHardReset(interaction: any) {
-  if (!interaction.member.permissions.has("ADMINISTRATOR")) {
+  if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
       content: "No tienes permisos para usar este comando",
       flags: { ephemeral: true }
