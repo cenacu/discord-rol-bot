@@ -1,4 +1,3 @@
-
 import { SlashCommandBuilder } from "discord.js";
 import { docClient, TableNames } from "../../dynamodb";
 import { DeleteTableCommand, CreateTableCommand } from "@aws-sdk/client-dynamodb";
@@ -12,13 +11,13 @@ export async function handleHardReset(interaction: any) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
       content: "No tienes permisos para usar este comando",
-      flags: { ephemeral: true }
+      ephemeral: true
     });
     return;
   }
 
   try {
-    await interaction.deferReply({ flags: { ephemeral: true } });
+    await interaction.deferReply({ ephemeral: true });
 
     // Eliminar todas las tablas existentes
     for (const tableName of Object.values(TableNames)) {
@@ -26,7 +25,7 @@ export async function handleHardReset(interaction: any) {
         await docClient.send(new DeleteTableCommand({ TableName: tableName }));
         await interaction.followUp({
           content: `Tabla ${tableName} eliminada`,
-          flags: { ephemeral: true }
+          ephemeral: true
         });
       } catch (error) {
         console.error(`Error eliminando tabla ${tableName}:`, error);
@@ -41,13 +40,13 @@ export async function handleHardReset(interaction: any) {
 
     await interaction.followUp({
       content: "¡Reset completado! Todas las tablas han sido recreadas.",
-      flags: { ephemeral: true }
+      ephemeral: true
     });
   } catch (error) {
     console.error("Error en hard-reset:", error);
     await interaction.followUp({
       content: "Hubo un error al resetear la base de datos",
-      flags: { ephemeral: true }
+      ephemeral: true
     });
   }
 }
@@ -211,7 +210,7 @@ Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
         } else {
           await interaction.reply({
             content: `No se encontró una moneda llamada "${name}"`,
-            flags: { ephemeral: true }
+            ephemeral: true
           });
         }
       } catch (error) {
