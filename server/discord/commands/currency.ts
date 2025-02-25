@@ -1,4 +1,4 @@
-import { Client, SlashCommandBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
+import { Client, SlashCommandBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody, MessageFlags } from "discord.js";
 import { storage } from "../../storage";
 
 export default function registerCurrencyCommands(
@@ -65,7 +65,7 @@ export default function registerCurrencyCommands(
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al listar las monedas",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -95,12 +95,12 @@ export default function registerCurrencyCommands(
 
         await interaction.reply({
           content: `Balance de <@${interaction.user.id}>:\n${balanceLines.join("\n")}`,
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al consultar tu balance",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -135,7 +135,7 @@ export default function registerCurrencyCommands(
         if (!currency) {
           await interaction.reply({
             content: "Moneda no encontrada",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -145,7 +145,7 @@ export default function registerCurrencyCommands(
         if (currentBalance < amount) {
           await interaction.reply({
             content: `No tienes suficientes ${currency.symbol}`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -180,12 +180,12 @@ export default function registerCurrencyCommands(
         if (error instanceof Error && error.message === "Insufficient funds") {
           await interaction.reply({
             content: "No tienes suficientes fondos para esta transferencia",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
         } else {
           await interaction.reply({
             content: "Hubo un error al realizar la transferencia",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
         }
       }
@@ -222,7 +222,7 @@ export default function registerCurrencyCommands(
 
             await interaction.reply({
               content: `Debes esperar ${remainingDays} días y ${hours} horas antes de poder trabajar nuevamente.`,
-              ephemeral: true
+              flags: MessageFlags.Ephemeral
             });
             return;
           }
@@ -259,7 +259,7 @@ export default function registerCurrencyCommands(
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al procesar tu trabajo",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -272,7 +272,7 @@ export default function registerCurrencyCommands(
         if (targetUser.id === interaction.user.id) {
           await interaction.reply({
             content: "No puedes robarte a ti mismo 🤦‍♂️",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -310,7 +310,7 @@ export default function registerCurrencyCommands(
 
             await interaction.reply({
               content: `Debes esperar ${remainingDays} días y ${hours} horas antes de poder robar nuevamente.`,
-              ephemeral: true
+              flags: MessageFlags.Ephemeral
             });
             return;
           }
@@ -328,7 +328,7 @@ export default function registerCurrencyCommands(
         if (!victimHasCoins) {
           await interaction.reply({
             content: `${targetUser.username} no tiene monedas para robar 😢`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -387,7 +387,7 @@ export default function registerCurrencyCommands(
         console.error("Error en comando robar:", error);
         await interaction.reply({
           content: "Hubo un error al intentar robar",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }

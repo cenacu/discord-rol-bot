@@ -17,7 +17,7 @@ export async function handleHardReset(interaction: any) {
   }
 
   try {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // Eliminar todas las tablas existentes
     for (const tableName of Object.values(TableNames)) {
@@ -25,7 +25,7 @@ export async function handleHardReset(interaction: any) {
         await docClient.send(new DeleteTableCommand({ TableName: tableName }));
         await interaction.followUp({
           content: `Tabla ${tableName} eliminada`,
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       } catch (error) {
         console.error(`Error eliminando tabla ${tableName}:`, error);
@@ -40,13 +40,13 @@ export async function handleHardReset(interaction: any) {
 
     await interaction.followUp({
       content: "¡Reset completado! Todas las tablas han sido recreadas.",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   } catch (error) {
     console.error("Error en hard-reset:", error);
     await interaction.followUp({
       content: "Hubo un error al resetear la base de datos",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }
@@ -134,7 +134,7 @@ export function registerAdminCommands(
               - Ver Canal
               - Enviar Mensajes
               - Leer el Historial de Mensajes`,
-              ephemeral: true
+              flags: MessageFlags.Ephemeral
             });
             return;
           }
@@ -149,7 +149,7 @@ export function registerAdminCommands(
         ].includes(channel.type)) {
           await interaction.reply({
             content: "Por favor selecciona un canal de texto, anuncios o hilo",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -175,7 +175,7 @@ Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
           1. El bot tiene los permisos necesarios en el servidor
           2. El canal seleccionado es accesible por el bot
           3. El bot tiene los permisos necesarios en el canal`,
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -195,7 +195,7 @@ Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al crear la moneda",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -210,13 +210,13 @@ Si en algún momento dejo de funcionar, por favor verifica estos permisos.`);
         } else {
           await interaction.reply({
             content: `No se encontró una moneda llamada "${name}"`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
         }
       } catch (error) {
         await interaction.reply({
           content: "Hubo un error al eliminar la moneda",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }

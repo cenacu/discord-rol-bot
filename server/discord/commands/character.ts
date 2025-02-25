@@ -1,4 +1,4 @@
-import { Client, SlashCommandBuilder, EmbedBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
+import { Client, SlashCommandBuilder, EmbedBuilder, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody, MessageFlags } from "discord.js";
 import { storage } from "../../storage";
 
 export default function registerCharacterCommands(
@@ -158,7 +158,7 @@ export default function registerCharacterCommands(
         console.error("Error al crear personaje:", error);
         await interaction.reply({
           content: "Hubo un error al crear el personaje. Asegúrate de proporcionar URLs válidas para la imagen y N20.",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -209,7 +209,7 @@ export default function registerCharacterCommands(
         console.error("Error al obtener personajes:", error);
         await interaction.reply({
           content: "Hubo un error al obtener los personajes",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -226,7 +226,7 @@ export default function registerCharacterCommands(
         if (!character) {
           await interaction.reply({
             content: `No se encontró ningún personaje con el nombre "${name}" o no eres su propietario.`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -239,12 +239,12 @@ export default function registerCharacterCommands(
           .setColor('#ff0000')
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       } catch (error) {
         console.error("Error al eliminar personaje:", error);
         await interaction.reply({
           content: "Hubo un error al eliminar el personaje",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -258,7 +258,7 @@ export default function registerCharacterCommands(
         if (!newLevel && !newRank) {
           await interaction.reply({
             content: "Debes proporcionar al menos un campo para editar (nivel o rango).",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -271,7 +271,7 @@ export default function registerCharacterCommands(
         if (!character) {
           await interaction.reply({
             content: `No se encontró ningún personaje con el nombre "${name}" o no eres su propietario.`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -306,7 +306,7 @@ export default function registerCharacterCommands(
         console.error("Error al editar personaje:", error);
         await interaction.reply({
           content: "Hubo un error al editar el personaje",
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     }

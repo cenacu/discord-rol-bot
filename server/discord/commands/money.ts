@@ -1,4 +1,4 @@
-import { Client, SlashCommandBuilder, PermissionFlagsBits, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
+import { Client, SlashCommandBuilder, PermissionFlagsBits, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody, MessageFlags } from "discord.js";
 import { storage } from "../../storage";
 
 export default function registerMoneyCommands(
@@ -62,7 +62,7 @@ export default function registerMoneyCommands(
         if (!currency) {
           await interaction.reply({
             content: "Moneda no encontrada",
-            flags: { ephemeral: true }
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -72,7 +72,7 @@ export default function registerMoneyCommands(
         if (currentBalance < amount) {
           await interaction.reply({
             content: `No tienes suficientes ${currency.symbol} para descontar`,
-            flags: { ephemeral: true }
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -111,7 +111,7 @@ export default function registerMoneyCommands(
         console.error("Error al descontar dinero:", error);
         await interaction.reply({
           content: "Hubo un error al descontar el dinero",
-          flags: { ephemeral: true }
+          flags: MessageFlags.Ephemeral
         });
       }
     }
@@ -137,7 +137,7 @@ export default function registerMoneyCommands(
         if (!currency) {
           await interaction.reply({
             content: "Moneda no encontrada",
-            flags: { ephemeral: true }
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -177,7 +177,7 @@ export default function registerMoneyCommands(
         console.error("Error al agregar dinero:", error);
         await interaction.reply({
           content: "Hubo un error al agregar el dinero",
-          flags: { ephemeral: true }
+          flags: MessageFlags.Ephemeral
         });
       }
     }
