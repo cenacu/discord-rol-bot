@@ -3,6 +3,17 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import setupTables from "./setup-dynamodb";
 
+const express = require('express')
+const server = express();
+
+server.all('/', (req, res) => {
+    res.send('Bot 24/7');
+});
+
+server.listen(3000, () => {
+    console.log('Servidor Listo.');
+ });
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
