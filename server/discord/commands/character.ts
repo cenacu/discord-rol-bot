@@ -92,13 +92,13 @@ export default function registerCharacterCommands(
     .addIntegerOption(option =>
       option.setName("nivel")
         .setDescription("Nuevo nivel del personaje")
-        .setRequired(false)
+        .setRequired(true)
         .setMinValue(1)
         .setMaxValue(20))
     .addStringOption(option =>
       option.setName("rango")
         .setDescription("Nuevo rango del personaje")
-        .setRequired(false)
+        .setRequired(true)
         .addChoices(
           { name: 'Rango E', value: 'Rango E' },
           { name: 'Rango D', value: 'Rango D' },
@@ -255,13 +255,7 @@ export default function registerCharacterCommands(
         const newLevel = interaction.options.getInteger("nivel");
         const newRank = interaction.options.getString("rango");
 
-        if (!newLevel && !newRank) {
-          await interaction.reply({
-            content: "Debes proporcionar al menos un campo para editar (nivel o rango).",
-            flags: MessageFlags.Ephemeral
-          });
-          return;
-        }
+        
 
         const characters = await storage.getCharacters(interaction.guildId!);
         const character = characters.find(
