@@ -11,7 +11,7 @@ export async function handleHardReset(interaction: any) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
       content: "No tienes permisos para usar este comando",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -51,7 +51,7 @@ export async function handleHardReset(interaction: any) {
   }
 }
 
-import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel, PermissionsString, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
+import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel, PermissionsString, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody, MessageFlags } from "discord.js";
 import { storage } from "../../storage";
 
 export function registerAdminCommands(
