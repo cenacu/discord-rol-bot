@@ -87,7 +87,7 @@ export function registerAdminCommands(
       option.setName("canal")
         .setDescription("Canal donde se registrarán las transacciones")
         .addChannelTypes(
-          ChannelType,GuildText,
+          ChannelType.GuildText,
           ChannelType.GuildAnnouncement,
           ChannelType.PublicThread,
           ChannelType.PrivateThread,
