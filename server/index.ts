@@ -1,9 +1,10 @@
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import setupTables from "./setup-dynamodb";
 
-const express = require('express')
+const app = express();
 const server = express();
 
 server.all('/', (req, res) => {
@@ -12,9 +13,8 @@ server.all('/', (req, res) => {
 
 server.listen(3000, () => {
     console.log('Servidor Listo.');
- });
+});
 
-const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -52,7 +52,6 @@ app.use((req, res, next) => {
   try {
     console.log("🔄 Iniciando aplicación...");
 
-    // Configurar DynamoDB primero
     console.log("⏳ Configurando DynamoDB...");
     await setupTables();
     console.log("✅ DynamoDB configurado exitosamente");
