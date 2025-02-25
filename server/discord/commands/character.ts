@@ -85,10 +85,26 @@ export default function registerCharacterCommands(
   const editCharacterCommand = new SlashCommandBuilder()
     .setName("editar-personaje")
     .setDescription("Edita el nivel o rango de uno de tus personajes")
-    .addStringOption(option =>
-      option.setName("nombre")
+    .addStringOption(async option => {
+      const baseOption = option
+        .setName("nombre")
         .setDescription("Nombre del personaje a editar")
-        .setRequired(true))
+        .setRequired(true);
+
+      try {
+        const characters = await storage.getCharacters(interaction.guildId!);
+        const userCharacters = characters.filter(c => c.userId === interaction.user.id);
+        return baseOption.addChoices(
+          ...userCharacters.map(char => ({
+            name: char.name,
+            value: char.name
+          }))
+        );
+      } catch (error) {
+        console.error("Error loading characters for choices:", error);
+        return baseOption;
+      }
+    })
     .addIntegerOption(option =>
       option.setName("nivel")
         .setDescription("Nuevo nivel del personaje")
