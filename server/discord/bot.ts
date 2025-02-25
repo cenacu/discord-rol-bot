@@ -4,6 +4,7 @@ import registerCurrencyCommands from "./commands/currency";
 import registerCharacterCommands from "./commands/character";
 import registerMoneyCommands from "./commands/money";
 import registerBackupCommands from "./commands/backup";
+import { hardReset, handleHardReset } from "./commands/admin";
 
 export function setupBot(token: string) {
   const client = new Client({
@@ -20,6 +21,7 @@ export function setupBot(token: string) {
   registerCharacterCommands(client, commands);
   registerMoneyCommands(client, commands);
   registerBackupCommands(client, commands);
+  commands.set(hardReset.name, hardReset.toJSON());
 
   client.once(Events.ClientReady, async c => {
     console.log(`¡Bot listo! Conectado como ${c.user?.tag}`);
@@ -51,6 +53,14 @@ export function setupBot(token: string) {
       console.log(`✅ Comandos registrados en nuevo servidor ${guild.name} (${registeredCommands.size} comandos)`);
     } catch (error) {
       console.error(`❌ Error al registrar comandos en nuevo servidor ${guild.name}:`, error);
+    }
+  });
+
+  // Add hard-reset command handler
+  client.on("interactionCreate", async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+    if (interaction.commandName === "hard-reset") {
+      await handleHardReset(interaction);
     }
   });
 

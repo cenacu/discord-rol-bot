@@ -1,3 +1,57 @@
+
+import { SlashCommandBuilder } from "discord.js";
+import { docClient, TableNames } from "../../dynamodb";
+import { DeleteTableCommand, CreateTableCommand } from "@aws-sdk/client-dynamodb";
+import setupTables from "../../setup-dynamodb";
+
+export const hardReset = new SlashCommandBuilder()
+  .setName("hard-reset")
+  .setDescription("Resetea toda la base de datos (¡Cuidado!)");
+
+export async function handleHardReset(interaction: any) {
+  if (!interaction.member.permissions.has("ADMINISTRATOR")) {
+    await interaction.reply({
+      content: "No tienes permisos para usar este comando",
+      flags: { ephemeral: true }
+    });
+    return;
+  }
+
+  try {
+    await interaction.deferReply({ flags: { ephemeral: true } });
+
+    // Eliminar todas las tablas existentes
+    for (const tableName of Object.values(TableNames)) {
+      try {
+        await docClient.send(new DeleteTableCommand({ TableName: tableName }));
+        await interaction.followUp({
+          content: `Tabla ${tableName} eliminada`,
+          flags: { ephemeral: true }
+        });
+      } catch (error) {
+        console.error(`Error eliminando tabla ${tableName}:`, error);
+      }
+    }
+
+    // Esperar un momento para asegurar que las tablas se eliminaron
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    // Recrear todas las tablas
+    await setupTables();
+
+    await interaction.followUp({
+      content: "¡Reset completado! Todas las tablas han sido recreadas.",
+      flags: { ephemeral: true }
+    });
+  } catch (error) {
+    console.error("Error en hard-reset:", error);
+    await interaction.followUp({
+      content: "Hubo un error al resetear la base de datos",
+      flags: { ephemeral: true }
+    });
+  }
+}
+
 import { Client, PermissionFlagsBits, SlashCommandBuilder, ChannelType, TextChannel, ThreadChannel, PermissionsString, Collection, RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { storage } from "../../storage";
 
