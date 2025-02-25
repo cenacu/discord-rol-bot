@@ -127,7 +127,7 @@ export default function registerCharacterCommands(
               name: char.name,
               value: char.name
             }));
-          
+
           await interaction.respond(filtered.slice(0, 25));
         } catch (error) {
           console.error("Error in autocomplete:", error);
@@ -177,7 +177,7 @@ export default function registerCharacterCommands(
           .setColor('#00ff00')
           .setImage(imageUrl);
 
-        await interaction.reply({ embeds: [embed], ephemeral: false });
+        await interaction.reply({ embeds: [embed], flags: 0 });
       } catch (error) {
         console.error("Error al crear personaje:", error);
         await interaction.reply({
@@ -195,7 +195,7 @@ export default function registerCharacterCommands(
         if (userCharacters.length === 0) {
           await interaction.reply({
             content: `${interaction.user.username} no tiene personajes creados aún.`,
-            ephemeral: false
+            flags: 0
           });
           return;
         }
@@ -227,7 +227,7 @@ export default function registerCharacterCommands(
         await interaction.reply({
           content: `**Personajes de ${interaction.user.username}** (${userCharacters.length}):`,
           embeds: embeds,
-          ephemeral: false
+          flags: 0
         });
       } catch (error) {
         console.error("Error al obtener personajes:", error);
@@ -279,7 +279,7 @@ export default function registerCharacterCommands(
         const newLevel = interaction.options.getInteger("nivel");
         const newRank = interaction.options.getString("rango");
 
-        
+
 
         const characters = await storage.getCharacters(interaction.guildId!);
         const character = characters.find(
@@ -319,7 +319,7 @@ export default function registerCharacterCommands(
           embed.setImage(character.imageUrl);
         }
 
-        await interaction.reply({ embeds: [embed], ephemeral: false });
+        await interaction.reply({ embeds: [embed], flags: 0 });
       } catch (error) {
         console.error("Error al editar personaje:", error);
         await interaction.reply({
