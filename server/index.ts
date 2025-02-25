@@ -68,7 +68,10 @@ app.use((req, res, next) => {
       host: "0.0.0.0",
       reusePort: true,
     }, () => {
+      const replUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
       log(`✅ Servidor iniciado en puerto ${port}`);
+      log(`📡 URL del Repl: ${replUrl}`);
+      log(`🔗 URL para UptimeRobot: ${replUrl}/ping`);
     });
   } catch (error) {
     console.error("❌ Error fatal durante el inicio de la aplicación:", error);
