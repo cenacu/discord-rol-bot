@@ -1,12 +1,48 @@
 # Bot de Discord para Comunidades de Rol
 
-## Inicio Rápido (Windows)
-1. Instala [Node.js](https://nodejs.org) si no lo tienes instalado
-2. Descarga este repositorio
-3. **IMPORTANTE**: Extrae todos los archivos a una carpeta (por ejemplo: `C:\MiBot`)
-4. Navega a la carpeta donde extrajiste los archivos
-5. Ejecuta `configure.bat` y sigue las instrucciones para configurar las credenciales
-6. Ejecuta `start-bot.bat` para iniciar el bot
+## Despliegue en AWS EC2
+1. Lanza una instancia EC2 (Ubuntu Server recomendado)
+   - Usa Ubuntu Server 22.04 LTS
+   - Tipo de instancia recomendada: t2.micro (capa gratuita)
+   - Configura un grupo de seguridad que permita SSH (puerto 22)
+
+2. Conecta a tu instancia:
+   ```bash
+   ssh -i tu-key.pem ubuntu@tu-ip-ec2
+   ```
+
+3. Clona este repositorio:
+   ```bash
+   git clone <URL_DEL_REPOSITORIO>
+   cd <NOMBRE_DEL_DIRECTORIO>
+   ```
+
+4. Ejecuta el script de configuración:
+   ```bash
+   chmod +x setup-ec2.sh
+   ./setup-ec2.sh
+   ```
+
+5. Configura las credenciales:
+   ```bash
+   nano .env
+   ```
+
+6. Inicia el bot:
+   ```bash
+   ./start.sh
+   ```
+
+### Gestión del Bot en EC2
+- Ver logs: `pm2 logs discord-bot`
+- Estado del bot: `pm2 status`
+- Reiniciar bot: `pm2 restart discord-bot`
+- Detener bot: `pm2 stop discord-bot`
+- Configurar inicio automático: 
+  ```bash
+  pm2 startup
+  pm2 save
+  ```
 
 ## Credenciales Necesarias
 1. **Token de Discord**:
@@ -18,48 +54,6 @@
    - Access Key ID y Secret Access Key de AWS
    - Región de AWS donde se ejecutará el servicio
 
-## Configuración Manual
-Si prefieres configurar manualmente:
-
-### 1. Requisitos del Sistema
-- Node.js v20 o superior
-- npm (viene con Node.js)
-- Git
-
-### 2. Clonar el Repositorio
-```bash
-git clone <URL_DEL_REPOSITORIO>
-cd <NOMBRE_DEL_DIRECTORIO>
-```
-
-### 3. Configurar Variables de Entorno
-Crea un archivo `.env` en la raíz del proyecto con:
-
-```env
-# Discord Bot
-DISCORD_TOKEN=tu_token_del_bot
-CLIENT_ID=1342885981291942020
-PUBLIC_KEY=fe8d6060843e703feced2f7cedec49321b6edd5c568fb3535b5dd18674985740
-
-# AWS DynamoDB
-AWS_ACCESS_KEY_ID=tu_aws_access_key_id
-AWS_SECRET_ACCESS_KEY=tu_aws_secret_access_key
-AWS_REGION=tu_region_preferida
-```
-
-### 4. Iniciar la Aplicación
-```bash
-npm install
-npm run dev
-```
-
-## Comandos Disponibles
-- `/character` - Gestión de personajes
-- `/currency` - Sistema de economía
-- `/money` - Gestión de dinero
-- `/admin` - Comandos administrativos
-- `/backup` - Sistema de respaldos
-
 ## Solución de Problemas
 
 ### El Bot No Responde
@@ -67,5 +61,10 @@ Asegúrate de que:
 1. El bot esté invitado a tu servidor
 2. Las credenciales en el archivo .env sean correctas
 3. El bot tenga los permisos necesarios
+
+Para ver los logs:
+```bash
+pm2 logs discord-bot
+```
 
 Para más ayuda, revisa los logs o abre un issue en el repositorio.
