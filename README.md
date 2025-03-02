@@ -3,8 +3,12 @@
 ## Inicio Rápido (Windows)
 1. Instala [Node.js](https://nodejs.org) si no lo tienes instalado
 2. Descarga este repositorio
-3. Haz doble clic en `start-bot.bat`
-4. Sigue las instrucciones en pantalla
+3. **IMPORTANTE**: Extrae todos los archivos a una carpeta (por ejemplo: `C:\MiBot`)
+4. Navega a la carpeta donde extrajiste los archivos
+5. Haz doble clic en `start-bot.bat`
+6. Sigue las instrucciones en pantalla para configurar tus credenciales
+
+**Nota**: No ejecutes start-bot.bat desde el explorador de Windows sin estar en la carpeta del proyecto.
 
 ## Configuración Manual
 Si prefieres configurar manualmente:

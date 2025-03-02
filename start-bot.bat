@@ -2,6 +2,10 @@
 echo === Bot de Discord para Comunidades de Rol ===
 echo Iniciando configuracion...
 
+:: Obtener el directorio del script
+cd /d "%~dp0"
+echo Directorio actual: %CD%
+
 :: Verificar si Node.js esta instalado
 where node >nul 2>nul
 if %errorlevel% neq 0 (
@@ -27,16 +31,32 @@ if not exist .env (
         echo AWS_REGION=your_preferred_region
     ) > .env
     echo [!] Por favor, edita el archivo .env con tus credenciales antes de continuar
+    echo Ubicacion del archivo: %CD%\.env
     notepad .env
     echo.
     echo Despues de guardar tus credenciales, presiona cualquier tecla para continuar...
     pause >nul
 )
 
+:: Verificar si existe package.json
+if not exist package.json (
+    echo [ERROR] No se encuentra el archivo package.json
+    echo Asegurate de estar ejecutando este script desde el directorio del proyecto
+    echo Directorio actual: %CD%
+    pause
+    exit /b 1
+)
+
 :: Instalar dependencias si no existen
 if not exist node_modules (
     echo Instalando dependencias...
     call npm install
+    if %errorlevel% neq 0 (
+        echo [ERROR] Error al instalar las dependencias
+        echo Por favor, verifica tu conexion a internet y que Node.js este correctamente instalado
+        pause
+        exit /b 1
+    )
 )
 
 :: Iniciar el bot
