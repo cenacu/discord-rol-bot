@@ -23,18 +23,27 @@ if not exist .env (
     (
         echo # Discord Bot
         echo DISCORD_TOKEN=your_discord_token_here
-        echo CLIENT_ID=your_client_id_here
+        echo CLIENT_ID=1342885981291942020
+        echo PUBLIC_KEY=fe8d6060843e703feced2f7cedec49321b6edd5c568fb3535b5dd18674985740
         echo.
         echo # AWS DynamoDB
         echo AWS_ACCESS_KEY_ID=your_aws_access_key_id
         echo AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
         echo AWS_REGION=your_preferred_region
     ) > .env
-    echo [!] Por favor, edita el archivo .env con tus credenciales antes de continuar
+    echo [!] Por favor, actualiza el DISCORD_TOKEN en el archivo .env
     echo Ubicacion del archivo: %CD%\.env
+    echo.
+    echo === INSTRUCCIONES PARA OBTENER EL TOKEN ===
+    echo 1. Ve a https://discord.com/developers/applications/1342885981291942020/bot
+    echo 2. En la seccion "Bot", copia el token
+    echo.
+    echo Las demas credenciales ya estan configuradas correctamente
+    echo.
+    start https://discord.com/developers/applications/1342885981291942020/bot
     notepad .env
     echo.
-    echo Despues de guardar tus credenciales, presiona cualquier tecla para continuar...
+    echo Despues de guardar el token, presiona cualquier tecla para continuar...
     pause >nul
 )
 

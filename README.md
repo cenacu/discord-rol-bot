@@ -6,7 +6,10 @@
 3. **IMPORTANTE**: Extrae todos los archivos a una carpeta (por ejemplo: `C:\MiBot`)
 4. Navega a la carpeta donde extrajiste los archivos
 5. Haz doble clic en `start-bot.bat`
-6. Sigue las instrucciones en pantalla para configurar tus credenciales
+6. Sigue las instrucciones en pantalla para configurar el token del bot:
+   - El script abrirá automáticamente la página del bot en el Portal de Desarrolladores
+   - En la sección "Bot", copia el token
+   - Pega el token en el archivo .env cuando se abra
 
 **Nota**: No ejecutes start-bot.bat desde el explorador de Windows sin estar en la carpeta del proyecto.
 
@@ -29,8 +32,9 @@ Crea un archivo `.env` en la raíz del proyecto con:
 
 ```env
 # Discord Bot
-DISCORD_TOKEN=tu_token_de_discord
-CLIENT_ID=id_de_tu_aplicacion_discord
+DISCORD_TOKEN=tu_token_del_bot
+CLIENT_ID=1342885981291942020
+PUBLIC_KEY=fe8d6060843e703feced2f7cedec49321b6edd5c568fb3535b5dd18674985740
 
 # AWS DynamoDB
 AWS_ACCESS_KEY_ID=tu_aws_access_key_id
@@ -55,7 +59,7 @@ npm run dev
 
 ### Error con las Credenciales
 Verifica que:
-1. Las credenciales de Discord (DISCORD_TOKEN y CLIENT_ID) sean válidas
+1. El DISCORD_TOKEN sea válido (copiado correctamente de la sección Bot)
 2. Las credenciales de AWS sean correctas
 3. La región de AWS esté bien configurada
 

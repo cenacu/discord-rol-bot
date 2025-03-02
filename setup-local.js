@@ -1,4 +1,3 @@
-
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -10,7 +9,8 @@ if (!fs.existsSync('.env')) {
   console.log('📝 Creando archivo .env de ejemplo...');
   const envExample = `# Discord Bot
 DISCORD_TOKEN=your_discord_token_here
-CLIENT_ID=your_client_id_here
+CLIENT_ID=1342885981291942020
+PUBLIC_KEY=fe8d6060843e703feced2f7cedec49321b6edd5c568fb3535b5dd18674985740
 
 # AWS DynamoDB
 AWS_ACCESS_KEY_ID=your_aws_access_key_id
@@ -18,7 +18,7 @@ AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
 AWS_REGION=your_preferred_region
 `;
   fs.writeFileSync('.env', envExample);
-  console.log('✅ Archivo .env creado. Por favor, actualiza los valores con tus credenciales.');
+  console.log('✅ Archivo .env creado. Por favor, actualiza el DISCORD_TOKEN con tu token del bot.');
 }
 
 // Verificar dependencias
@@ -35,10 +35,9 @@ try {
 🎉 Configuración completada!
 
 Para iniciar el proyecto:
-1. Actualiza las credenciales en el archivo .env:
-   - Configura tu DISCORD_TOKEN y CLIENT_ID desde el Portal de Desarrolladores de Discord
-   - Configura tus credenciales de AWS (AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY)
-   - Establece tu región preferida de AWS (AWS_REGION)
+1. Actualiza el DISCORD_TOKEN en el archivo .env:
+   - Ve a https://discord.com/developers/applications/1342885981291942020/bot
+   - En la sección "Bot", copia el token y agrégalo como DISCORD_TOKEN
 
 2. Ejecuta: npm run dev
 
