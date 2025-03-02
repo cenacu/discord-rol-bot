@@ -1,6 +1,27 @@
+# Dependencies
 node_modules
 dist
 .DS_Store
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# AWS
+*.pem
