@@ -19,32 +19,13 @@ if %errorlevel% neq 0 (
 
 :: Verificar si existe el archivo .env
 if not exist .env (
-    echo Creando archivo .env...
-    (
-        echo # Discord Bot
-        echo DISCORD_TOKEN=your_discord_token_here
-        echo CLIENT_ID=1342885981291942020
-        echo PUBLIC_KEY=fe8d6060843e703feced2f7cedec49321b6edd5c568fb3535b5dd18674985740
-        echo.
-        echo # AWS DynamoDB
-        echo AWS_ACCESS_KEY_ID=your_aws_access_key_id
-        echo AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
-        echo AWS_REGION=your_preferred_region
-    ) > .env
-    echo [!] Por favor, actualiza el DISCORD_TOKEN en el archivo .env
-    echo Ubicacion del archivo: %CD%\.env
+    echo [ERROR] No se encuentra el archivo .env
+    echo Por favor, ejecuta configure.bat primero para configurar las credenciales
     echo.
-    echo === INSTRUCCIONES PARA OBTENER EL TOKEN ===
-    echo 1. Ve a https://discord.com/developers/applications/1342885981291942020/bot
-    echo 2. En la seccion "Bot", copia el token
-    echo.
-    echo Las demas credenciales ya estan configuradas correctamente
-    echo.
-    start https://discord.com/developers/applications/1342885981291942020/bot
-    notepad .env
-    echo.
-    echo Despues de guardar el token, presiona cualquier tecla para continuar...
+    echo Presiona cualquier tecla para ejecutar configure.bat...
     pause >nul
+    call configure.bat
+    exit /b 1
 )
 
 :: Verificar si existe package.json

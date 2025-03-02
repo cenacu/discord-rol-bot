@@ -5,13 +5,18 @@
 2. Descarga este repositorio
 3. **IMPORTANTE**: Extrae todos los archivos a una carpeta (por ejemplo: `C:\MiBot`)
 4. Navega a la carpeta donde extrajiste los archivos
-5. Haz doble clic en `start-bot.bat`
-6. Sigue las instrucciones en pantalla para configurar el token del bot:
-   - El script abrirá automáticamente la página del bot en el Portal de Desarrolladores
-   - En la sección "Bot", copia el token
-   - Pega el token en el archivo .env cuando se abra
+5. Ejecuta `configure.bat` y sigue las instrucciones para configurar las credenciales
+6. Ejecuta `start-bot.bat` para iniciar el bot
 
-**Nota**: No ejecutes start-bot.bat desde el explorador de Windows sin estar en la carpeta del proyecto.
+## Credenciales Necesarias
+1. **Token de Discord**:
+   - Ve a https://discord.com/developers/applications/1342885981291942020/bot
+   - En la sección "Bot", copia el token
+
+2. **Credenciales de AWS**:
+   - Necesitarás una cuenta de AWS
+   - Access Key ID y Secret Access Key de AWS
+   - Región de AWS donde se ejecutará el servicio
 
 ## Configuración Manual
 Si prefieres configurar manualmente:
@@ -57,16 +62,10 @@ npm run dev
 
 ## Solución de Problemas
 
-### Error con las Credenciales
-Verifica que:
-1. El DISCORD_TOKEN sea válido (copiado correctamente de la sección Bot)
-2. Las credenciales de AWS sean correctas
-3. La región de AWS esté bien configurada
-
 ### El Bot No Responde
 Asegúrate de que:
 1. El bot esté invitado a tu servidor
-2. Tenga los permisos necesarios
-3. Los comandos estén registrados
+2. Las credenciales en el archivo .env sean correctas
+3. El bot tenga los permisos necesarios
 
 Para más ayuda, revisa los logs o abre un issue en el repositorio.
