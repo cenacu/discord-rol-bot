@@ -16,16 +16,8 @@ echo.
 
 :ask_aws_region
 echo === REGION DE AWS ===
-echo Regiones disponibles:
-echo 1) us-east-1 (Virginia)
-echo 2) us-west-2 (Oregon)
-echo 3) eu-west-1 (Irlanda)
-echo 4) sa-east-1 (Sao Paulo)
-set /p AWS_REGION_CHOICE="Elige el numero de tu region (1-4): "
-if "%AWS_REGION_CHOICE%"=="1" set AWS_REGION=us-east-1
-if "%AWS_REGION_CHOICE%"=="2" set AWS_REGION=us-west-2
-if "%AWS_REGION_CHOICE%"=="3" set AWS_REGION=eu-west-1
-if "%AWS_REGION_CHOICE%"=="4" set AWS_REGION=sa-east-1
+echo Usando region: us-east-2 (Ohio)
+set AWS_REGION=us-east-2
 echo.
 
 :ask_aws_keys
