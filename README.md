@@ -3,7 +3,6 @@
 ## Requisitos del Sistema
 - Node.js v20 o superior
 - npm (viene con Node.js)
-- Java Runtime Environment (JRE) - Necesario para DynamoDB local
 - Git
 
 ## Configuración Local
@@ -27,33 +26,19 @@ Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
 DISCORD_TOKEN=tu_token_de_discord
 CLIENT_ID=id_de_tu_aplicacion_discord
 
-# DynamoDB Local
-AWS_ACCESS_KEY_ID=dummy
-AWS_SECRET_ACCESS_KEY=dummy
-AWS_REGION=us-east-1
-DYNAMODB_ENDPOINT=http://localhost:8000
+# AWS DynamoDB
+AWS_ACCESS_KEY_ID=tu_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=tu_aws_secret_access_key
+AWS_REGION=tu_region_preferida
 ```
 
-### 4. Configurar DynamoDB Local
-
-1. Descarga DynamoDB Local:
-   - Visita: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html
-   - Descarga el archivo .jar
-
-2. Inicia DynamoDB Local:
-```bash
-java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
-```
-
-### 5. Iniciar la Aplicación
-En una nueva terminal, ejecuta:
+### 4. Iniciar la Aplicación
 ```bash
 npm run dev
 ```
 
 La aplicación estará disponible en:
 - Servidor Express: http://localhost:5000
-- DynamoDB Local: http://localhost:8000
 
 ## Configuración del Bot de Discord
 
@@ -71,11 +56,11 @@ La aplicación estará disponible en:
 
 ## Solución de Problemas
 
-### Error de Conexión con DynamoDB
+### Error con las Credenciales de AWS
 Asegúrate de que:
-1. DynamoDB Local esté corriendo
-2. Las variables de entorno estén correctamente configuradas
-3. El endpoint de DynamoDB coincida con el puerto configurado
+1. Las credenciales de AWS sean válidas
+2. El usuario de AWS tenga los permisos necesarios para DynamoDB
+3. La región de AWS esté correctamente configurada
 
 ### Error con el Bot de Discord
 Verifica que:
