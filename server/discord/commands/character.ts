@@ -33,7 +33,8 @@ export default function registerCharacterCommands(
           { name: 'Monje', value: 'monje' },
           { name: 'Paladín', value: 'paladin' },
           { name: 'Pícaro', value: 'picaro' },
-          { name: 'Explorador', value: 'explorador' }
+          { name: 'Explorador', value: 'explorador' },
+          { name: 'Artificero', value: 'artifice' }
         ))
     .addStringOption(option =>
       option.setName("raza")
@@ -48,7 +49,17 @@ export default function registerCharacterCommands(
           { name: 'Semielfo', value: 'semielfo' },
           { name: 'Semiorco', value: 'semiorco' },
           { name: 'Dracónido', value: 'draconido' },
-          { name: 'Tiefling', value: 'tiefling' }
+          { name: 'Tiefling', value: 'tiefling' },
+          { name: 'Acompañante', value: 'acompanante' },
+          { name: 'Dhamphiro', value: 'dhamphiro' },
+          { name: 'Dracónido Cromático', value: 'draconido_cromatico' },
+          { name: 'Dracónido Gema', value: 'draconido_gema' },
+          { name: 'Dracónido Metálico', value: 'draconido_metalico' },
+          { name: 'Linaje Personalizado', value: 'linaje_personalizado' },
+          { name: 'Renacido', value: 'renacido' },
+          { name: 'Sangre Maléfica', value: 'sangre_malefica' },
+          { name: 'SemiElfo', value: 'semielfo' },
+          { name: 'Tiefling Variante', value: 'tiefling_variante' }
         ))
     .addStringOption(option =>
       option.setName("rango")
