@@ -1,25 +1,27 @@
 # Bot de Discord para Comunidades de Rol
 
-## Requisitos del Sistema
+## Inicio Rápido (Windows)
+1. Instala [Node.js](https://nodejs.org) si no lo tienes instalado
+2. Descarga este repositorio
+3. Haz doble clic en `start-bot.bat`
+4. Sigue las instrucciones en pantalla
+
+## Configuración Manual
+Si prefieres configurar manualmente:
+
+### 1. Requisitos del Sistema
 - Node.js v20 o superior
 - npm (viene con Node.js)
 - Git
 
-## Configuración Local
-
-### 1. Clonar el Repositorio
+### 2. Clonar el Repositorio
 ```bash
 git clone <URL_DEL_REPOSITORIO>
 cd <NOMBRE_DEL_DIRECTORIO>
 ```
 
-### 2. Instalar Dependencias
-```bash
-npm install
-```
-
 ### 3. Configurar Variables de Entorno
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crea un archivo `.env` en la raíz del proyecto con:
 
 ```env
 # Discord Bot
@@ -34,18 +36,9 @@ AWS_REGION=tu_region_preferida
 
 ### 4. Iniciar la Aplicación
 ```bash
+npm install
 npm run dev
 ```
-
-La aplicación estará disponible en:
-- Servidor Express: http://localhost:5000
-
-## Configuración del Bot de Discord
-
-1. Crea una nueva aplicación en el [Portal de Desarrolladores de Discord](https://discord.com/developers/applications)
-2. Crea un bot para tu aplicación
-3. Copia el token del bot y agrégalo a tu archivo `.env`
-4. Utiliza el link de invitación generado para agregar el bot a tu servidor
 
 ## Comandos Disponibles
 - `/character` - Gestión de personajes
@@ -56,16 +49,16 @@ La aplicación estará disponible en:
 
 ## Solución de Problemas
 
-### Error con las Credenciales de AWS
-Asegúrate de que:
-1. Las credenciales de AWS sean válidas
-2. El usuario de AWS tenga los permisos necesarios para DynamoDB
-3. La región de AWS esté correctamente configurada
-
-### Error con el Bot de Discord
+### Error con las Credenciales
 Verifica que:
-1. El token del bot sea válido
-2. El bot tenga los permisos necesarios en el servidor
-3. Los comandos estén registrados correctamente
+1. Las credenciales de Discord (DISCORD_TOKEN y CLIENT_ID) sean válidas
+2. Las credenciales de AWS sean correctas
+3. La región de AWS esté bien configurada
 
-Para más ayuda, consulta los logs del servidor o abre un issue en el repositorio.
+### El Bot No Responde
+Asegúrate de que:
+1. El bot esté invitado a tu servidor
+2. Tenga los permisos necesarios
+3. Los comandos estén registrados
+
+Para más ayuda, revisa los logs o abre un issue en el repositorio.
