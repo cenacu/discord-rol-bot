@@ -1,17 +1,31 @@
+
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
-if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_REGION) {
-  throw new Error("AWS credentials not found. Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION");
-}
+let client;
 
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+// Verificar si estamos en modo local o si tenemos credenciales de AWS
+if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_REGION) {
+  console.log("⚠️ Credenciales AWS no encontradas. Usando DynamoDB en modo local.");
+  // Configuración para DynamoDB local
+  client = new DynamoDBClient({
+    region: "local",
+    endpoint: "http://localhost:8000",
+    credentials: {
+      accessKeyId: "local",
+      secretAccessKey: "local",
+    },
+  });
+} else {
+  // Configuración para DynamoDB en AWS
+  client = new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+}
 
 export const docClient = DynamoDBDocumentClient.from(client, {
   marshallOptions: {

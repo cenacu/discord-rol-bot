@@ -1,6 +1,7 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 console.log('🚀 Configurando entorno local...');
 
@@ -47,6 +48,7 @@ Para más información, consulta el README.md
   console.error('❌ Error durante la configuración:', error.message);
   console.log(`
 Por favor, asegúrate de tener instalado:
-1. Node.js (https://nodejs.org)
+1. Node.js versión 20 o superior
+2. npm (viene con Node.js)
 `);
 }
